@@ -169,8 +169,6 @@ object frmRecomList: TfrmRecomList
     ParentDoubleBuffered = False
     ShowCaption = False
     TabOrder = 1
-    ExplicitWidth = 458
-    ExplicitHeight = 410
     DesignSize = (
       462
       411)
@@ -211,6 +209,7 @@ object frmRecomList: TfrmRecomList
       Anchors = [akLeft, akBottom]
       Caption = #1056#1072#1079#1088#1077#1096#1080#1090#1100' '#1087#1077#1088#1077#1085#1086#1089' '#1089#1083#1086#1074
       TabOrder = 1
+      OnClick = chbWordWrapClick
       ExplicitTop = 380
     end
     object cbbScrollbar: TComboBox
@@ -221,6 +220,7 @@ object frmRecomList: TfrmRecomList
       Style = csDropDownList
       Anchors = [akRight, akBottom]
       TabOrder = 2
+      OnChange = cbbScrollbarChange
       ExplicitLeft = 285
       ExplicitTop = 378
     end

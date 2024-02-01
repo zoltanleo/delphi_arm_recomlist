@@ -23,6 +23,7 @@ uses
   , Vcl.Buttons
   , System.ImageList
   , Vcl.ImgList
+  , System.UITypes
   ;
 
 type
@@ -81,19 +82,21 @@ type
     procedure FormShow(Sender: TObject);
     procedure chbPreviewClick(Sender: TObject);
     procedure SplMoved(Sender: TObject);
+    procedure chbWordWrapClick(Sender: TObject);
+    procedure cbbScrollbarChange(Sender: TObject);
   private
     FKeybrdLayoutNum: Integer;
     FNodeCounter: Integer;
-    FpnlPreviewPrevWidth: Integer;
-    FpnlLeftCnmPrevWidth: Integer;
-    FIsAllowResizepnlPreview: Boolean;
+//    FpnlPreviewPrevWidth: Integer;
+//    FpnlLeftCnmPrevWidth: Integer;
+//    FIsAllowResizepnlPreview: Boolean;
   public
     { Public declarations }
     property KeybrdLayoutNum: Integer read FKeybrdLayoutNum;//номер текущей раскладки
     property NodeCounter: Integer read FNodeCounter;//счетчик для Node ID
-    property pnlLeftCnmPrevWidth: Integer read FpnlLeftCnmPrevWidth;//ширина pnlLeftCnm до ресайза
-    property pnlPreviewPrevWidth: Integer read FpnlPreviewPrevWidth;//ширина pnlPreview до ресайза
-    property IsAllowResizepnlPreview: Boolean read FIsAllowResizepnlPreview;//разрешение запоминать ширину pnlPreview
+//    property pnlLeftCnmPrevWidth: Integer read FpnlLeftCnmPrevWidth;//ширина pnlLeftCnm до ресайза
+//    property pnlPreviewPrevWidth: Integer read FpnlPreviewPrevWidth;//ширина pnlPreview до ресайза
+//    property IsAllowResizepnlPreview: Boolean read FIsAllowResizepnlPreview;//разрешение запоминать ширину pnlPreview
   end;
 
 const
@@ -104,6 +107,18 @@ var
 implementation
 
 {$R *.dfm}
+
+procedure TfrmRecomList.cbbScrollbarChange(Sender: TObject);
+var
+  sbValue: TScrollStyle;
+begin
+  case cbbScrollbar.ItemIndex of
+    0: sbValue:= TScrollStyle.ssBoth; //обе
+    1: sbValue:= TScrollStyle.ssVertical; // вертикальная
+    2: sbValue:= TScrollStyle.ssHorizontal; // горизонтальная
+    3: sbValue:= TScrollStyle.ssNone; // отсутствуют
+  end;
+end;
 
 procedure TfrmRecomList.chbPreviewClick(Sender: TObject);
 var
@@ -139,6 +154,11 @@ begin
   end;
 end;
 
+procedure TfrmRecomList.chbWordWrapClick(Sender: TObject);
+begin
+  REdt.WordWrap:= chbWordWrap.Checked;
+end;
+
 procedure TfrmRecomList.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   Settings.SenderObject:= sofrmRecomList;
@@ -147,6 +167,8 @@ begin
   Settings.cbbPrintFmt_ItemIndex:= cbbFmtPrint.ItemIndex;
   Settings.SettingsFile.WriteInteger(Self.Name,'PnlLeftCmn_Width', pnlLeftCmn.Width);
   Settings.SettingsFile.WriteBool(Self.Name, 'chbPreview_chk',chbPreview.Checked);
+  Settings.SettingsFile.WriteBool(Self.Name, 'chbWordWrap_chk',chbWordWrap.Checked);
+  Settings.SettingsFile.WriteInteger(Self.Name,'cbbScrollbar_ItemIndex', cbbScrollbar.ItemIndex);
 
   Settings.Save(Self);
 end;
@@ -198,7 +220,6 @@ begin
   pnlPreview.Constraints.MinWidth:= 460;
 
   FNodeCounter:= 0;
-  FIsAllowResizepnlPreview:= True;
 
   with vst do
   begin
@@ -266,8 +287,8 @@ end;
 
 procedure TfrmRecomList.FormResize(Sender: TObject);
 begin
-  if (Spl.Left > Self.Width) then  pnlLeftCmn.Width:= Self.Width div 3 * 2;
-  FIsAllowResizepnlPreview:= True;
+  if (Self.WindowState <> TWindowState.wsMaximized) then
+    if (Spl.Left > Self.Width) then  pnlLeftCmn.Width:= Self.Width div 3 * 2;
 end;
 
 procedure TfrmRecomList.FormShow(Sender: TObject);
@@ -280,12 +301,15 @@ begin
     FKeybrdLayoutNum:= KeybrdLayoutNum;
     pnlLeftCmn.Width:= SettingsFile.ReadInteger(Self.Name,'PnlLeftCmn_Width', pnlLeftCmn.Constraints.MinWidth);
     chbPreview.Checked:= SettingsFile.ReadBool(Self.Name, 'chbPreview_chk',False);
+    chbWordWrap.Checked:= Settings.SettingsFile.ReadBool(Self.Name, 'chbWordWrap_chk',False);
+    cbbScrollbar.ItemIndex:= Settings.SettingsFile.ReadInteger(Self.Name,'cbbScrollbar_ItemIndex', 0);
   end;
 
   SetLastUsedKeyLayout(KeybrdLayoutNum);
   chbPreviewClick(Sender);
-  FpnlLeftCnmPrevWidth:= pnlLeftCmn.Width;
-  FpnlPreviewPrevWidth:= pnlPreview.Width;
+  chbWordWrapClick(Sender);
+//  FpnlLeftCnmPrevWidth:= pnlLeftCmn.Width;
+//  FpnlPreviewPrevWidth:= pnlPreview.Width;
 end;
 
 procedure TfrmRecomList.SplMoved(Sender: TObject);

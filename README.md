@@ -1,5 +1,8 @@
 # delphi_arm_recomlist
 
+0.0.3
+- saving form settings is implemented
+
 0.0.2
 - redesign of form
 - implemented show/hide preview window
