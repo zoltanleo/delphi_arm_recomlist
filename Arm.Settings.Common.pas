@@ -77,6 +77,7 @@ type
                   , sofrmTblPriceTree
                   , soFrmUZIGenit
                   , soFrmUZIRen
+                  , sofrmRecomList
                   );
 
   {from here https://www.gunsmoker.ru/2011/04/blog-post.html}
@@ -366,6 +367,10 @@ begin
         cbbPrintFmt_ItemIndex:= SettingsFile.ReadInteger(SectName, 'cbbPrintFmt_ItemIndex', cbbPrintFmt_ItemIndex);
         FReportTemplDir:= SettingsFile.ReadString(SectName, 'ReportTemplDir', ReportTemplDir);
       end;
+    sofrmRecomList:
+      begin
+        cbbPrintFmt_ItemIndex:= SettingsFile.ReadInteger(SectName, 'cbbPrintFmt_ItemIndex', cbbPrintFmt_ItemIndex);
+      end;
   end;
 end;
 
@@ -508,6 +513,10 @@ begin
           begin
             SettingsFile.WriteInteger(SectName, 'cbbPrintFmt_ItemIndex', cbbPrintFmt_ItemIndex);
             SettingsFile.WriteString(SectName, 'ReportTemplDir', ReportTemplDir);
+          end;
+        sofrmRecomList:
+          begin
+            SettingsFile.WriteInteger(SectName, 'cbbPrintFmt_ItemIndex', cbbPrintFmt_ItemIndex);
           end;
       end;
     end;

@@ -1,3 +1,7 @@
 /Project1.delphilsp.json
 /*.local
 /Win32
+/*.dsk
+/*.identcache
+/*.~dsk
+/__history

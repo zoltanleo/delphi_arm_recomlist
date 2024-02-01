@@ -27,7 +27,7 @@ object frmTblPriceTree: TfrmTblPriceTree
       608
       38)
     object btnCancel: TButton
-      Left = 521
+      Left = 517
       Top = 6
       Width = 75
       Height = 25
@@ -36,7 +36,7 @@ object frmTblPriceTree: TfrmTblPriceTree
       TabOrder = 1
     end
     object btnSave: TButton
-      Left = 440
+      Left = 436
       Top = 6
       Width = 75
       Height = 25

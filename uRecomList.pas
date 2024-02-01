@@ -14,9 +14,15 @@ uses
   , Vcl.Dialogs
   , Vcl.StdCtrls
   , Vcl.ComCtrls
+  , VarAndrUnit
   , Arm.Settings.Common
   , VirtualTrees
   , Vcl.ExtCtrls
+  , System.Actions
+  , Vcl.ActnList
+  , Vcl.Buttons
+  , System.ImageList
+  , Vcl.ImgList
   ;
 
 type
@@ -33,17 +39,33 @@ type
 
   TfrmRecomList = class(TForm)
     oDlg: TOpenDialog;
-    pnlRight: TPanel;
-    REdt: TRichEdit;
-    pnlLeft: TPanel;
+    Spl: TSplitter;
+    actList: TActionList;
+    actGroupAdd: TAction;
+    actItemAdd: TAction;
+    actNodeEdt: TAction;
+    actNodeDel: TAction;
+    ActPrint: TAction;
+    ActHelp: TAction;
+    actClose: TAction;
+    imgList: TImageList;
+    pnlLeftCmn: TPanel;
+    pnlLeftTop: TPanel;
     vst: TVirtualStringTree;
     btnGroupAdd: TButton;
     btnItemAdd: TButton;
     btnItemEdit: TButton;
     btnItemDelete: TButton;
+    pnlLeftBottom: TPanel;
+    btnHelp: TButton;
     cbbFmtPrint: TComboBox;
-    Spl: TSplitter;
     btnPrint: TButton;
+    pnlPreview: TPanel;
+    REdt: TRichEdit;
+    chbPreview: TCheckBox;
+    chbWordWrap: TCheckBox;
+    Label1: TLabel;
+    cbbScrollbar: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure vstGetNodeDataSize(Sender: TBaseVirtualTree; var NodeDataSize: Integer);
     procedure vstFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -55,10 +77,23 @@ type
       var CellText: string);
     procedure vstResize(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormShow(Sender: TObject);
+    procedure chbPreviewClick(Sender: TObject);
+    procedure SplMoved(Sender: TObject);
   private
-    { Private declarations }
+    FKeybrdLayoutNum: Integer;
+    FNodeCounter: Integer;
+    FpnlPreviewPrevWidth: Integer;
+    FpnlLeftCnmPrevWidth: Integer;
+    FIsAllowResizepnlPreview: Boolean;
   public
     { Public declarations }
+    property KeybrdLayoutNum: Integer read FKeybrdLayoutNum;//номер текущей раскладки
+    property NodeCounter: Integer read FNodeCounter;//счетчик для Node ID
+    property pnlLeftCnmPrevWidth: Integer read FpnlLeftCnmPrevWidth;//ширина pnlLeftCnm до ресайза
+    property pnlPreviewPrevWidth: Integer read FpnlPreviewPrevWidth;//ширина pnlPreview до ресайза
+    property IsAllowResizepnlPreview: Boolean read FIsAllowResizepnlPreview;//разрешение запоминать ширину pnlPreview
   end;
 
 const
@@ -70,6 +105,52 @@ implementation
 
 {$R *.dfm}
 
+procedure TfrmRecomList.chbPreviewClick(Sender: TObject);
+var
+  tmpWidth: Integer;
+begin
+  tmpWidth:= pnlLeftCmn.Width;
+  Self.LockDrawing;
+  try
+    Spl.Visible:= chbPreview.Checked;
+    pnlPreview.Visible:= chbPreview.Checked;
+
+    if chbPreview.Checked
+      then
+        begin
+          pnlLeftCmn.Align:= alLeft;
+          Spl.Align:= alLeft;
+
+          if (Self.WindowState = TWindowState.wsMaximized)
+            then pnlLeftCmn.Width:= Self.ClientWidth div 3 * 2
+            else Self.ClientWidth:= tmpWidth + Spl.Width + pnlPreview.Width;
+        end
+      else
+        begin
+          Spl.Align:= alNone;
+
+          if (Self.WindowState <> TWindowState.wsMaximized) then
+          Self.ClientWidth:= tmpWidth;
+          pnlLeftCmn.Align:= alClient;
+
+        end;
+  finally
+    Self.UnlockDrawing;
+  end;
+end;
+
+procedure TfrmRecomList.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  Settings.SenderObject:= sofrmRecomList;
+  FKeybrdLayoutNum:= GetLastUsedKeyLayout;
+  Settings.KeybrdLayoutNum:= Self.KeybrdLayoutNum;
+  Settings.cbbPrintFmt_ItemIndex:= cbbFmtPrint.ItemIndex;
+  Settings.SettingsFile.WriteInteger(Self.Name,'PnlLeftCmn_Width', pnlLeftCmn.Width);
+  Settings.SettingsFile.WriteBool(Self.Name, 'chbPreview_chk',chbPreview.Checked);
+
+  Settings.Save(Self);
+end;
+
 procedure TfrmRecomList.FormCreate(Sender: TObject);
 var
   i: Integer;
@@ -79,15 +160,45 @@ begin
 
   for i := 0 to Pred(Self.ControlCount) do
     if TControl(Self.Controls[i]).InheritsFrom(TPanel) then
+    begin
       TPanel(Self.Controls[i]).BevelOuter:= bvNone;
+      TPanel(Self.Controls[i]).ShowCaption:= False;
+    end;
+
+  for i := 0 to Pred(pnlLeftCmn.ControlCount) do
+    if TControl(pnlLeftCmn.Controls[i]).InheritsFrom(TPanel) then
+    begin
+      TPanel(pnlLeftCmn.Controls[i]).BevelOuter:= bvNone;
+      TPanel(pnlLeftCmn.Controls[i]).ShowCaption:= False;
+    end;
 
   REdt.Clear;
+  with cbbFmtPrint do
+  begin
+    Clear;
+    Items.Add('формат А5');
+    Items.Add('формат А4');
+    ItemIndex:= 0;
+  end;
 
+  with cbbScrollbar do
+  begin
+    Clear;
+    Items.Add('обе');
+    Items.Add('вертикальная');
+    Items.Add('горизонтальная');
+    Items.Add('отсутствуют');
+    ItemIndex:= 0;
+  end;
 
   Spl.Margins.Top:= vst.Top;
-  Spl.Margins.Bottom:= pnlLeft.Height - vst.Top - vst.Height;
+  Spl.Margins.Bottom:= vst.Top;
+  pnlLeftCmn.Constraints.MinWidth:= 500;
+  pnlLeftCmn.Constraints.MinHeight:= 400;
+  pnlPreview.Constraints.MinWidth:= 460;
 
-
+  FNodeCounter:= 0;
+  FIsAllowResizepnlPreview:= True;
 
   with vst do
   begin
@@ -155,7 +266,36 @@ end;
 
 procedure TfrmRecomList.FormResize(Sender: TObject);
 begin
-  if (Spl.Left > Self.Width) then  pnlLeft.Width:= Self.Width div 3 * 2;
+  if (Spl.Left > Self.Width) then  pnlLeftCmn.Width:= Self.Width div 3 * 2;
+  FIsAllowResizepnlPreview:= True;
+end;
+
+procedure TfrmRecomList.FormShow(Sender: TObject);
+begin
+  with Settings do
+  begin
+    SenderObject:= sofrmRecomList;
+    Load(Self);
+    cbbFmtPrint.ItemIndex:= cbbPrintFmt_ItemIndex;
+    FKeybrdLayoutNum:= KeybrdLayoutNum;
+    pnlLeftCmn.Width:= SettingsFile.ReadInteger(Self.Name,'PnlLeftCmn_Width', pnlLeftCmn.Constraints.MinWidth);
+    chbPreview.Checked:= SettingsFile.ReadBool(Self.Name, 'chbPreview_chk',False);
+  end;
+
+  SetLastUsedKeyLayout(KeybrdLayoutNum);
+  chbPreviewClick(Sender);
+  FpnlLeftCnmPrevWidth:= pnlLeftCmn.Width;
+  FpnlPreviewPrevWidth:= pnlPreview.Width;
+end;
+
+procedure TfrmRecomList.SplMoved(Sender: TObject);
+begin
+//  if (pnlLeftCnmPrevWidth > Spl.Left)
+//    then Caption:= Format('сдвиг влево на: %d px',[pnlLeftCnmPrevWidth - Spl.left])
+//    else
+//      if (pnlLeftCnmPrevWidth < Spl.Left)
+//        then Caption:= Format('сдвиг вправо на: %d px',[Spl.left - pnlLeftCnmPrevWidth])
+//        else Caption:= 'стоим на месте';
 end;
 
 procedure TfrmRecomList.vstFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
