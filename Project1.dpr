@@ -2,7 +2,8 @@
 
 uses
   Vcl.Forms,
-  uRecomList in 'uRecomList.pas' {frmRecomList};
+  uRecomList in 'uRecomList.pas' {frmRecomList},
+  uNodeInfo in 'uNodeInfo.pas' {frmNodeInfo};
 
 {$R *.res}
 

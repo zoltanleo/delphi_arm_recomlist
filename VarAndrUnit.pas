@@ -84,6 +84,7 @@ const
   ShortCutHome = 'Shift+Ctrl+H';
   ShortCutMail = 'Shift+Ctrl+M';
   ShortCutDownload = 'Shift+Ctrl+D';
+  ShortCutOpen = 'Ctrl+O';
 
   PgShortCutPrev = 'Shift+Ctrl+Left';
   PgShortCutNext = 'Shift+Ctrl+Right';
@@ -97,6 +98,7 @@ const
   ShortCutImgBtn_5 = 'Shift+Ctrl+5';
   ShortCutImgBtn_6 = 'Shift+Ctrl+6';
   ShortCutAdd = 'Ctrl+N';
+  ShortCutAddMore = 'Shift+Ctrl+N';
   ShortCutEdit = 'Ctrl+E';
   ShortCutDel = 'Ctrl+D';
   ShortCutEdtEx = 'Shift+Ctrl+E';

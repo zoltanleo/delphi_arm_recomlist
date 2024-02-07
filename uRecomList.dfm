@@ -3,8 +3,8 @@ object frmRecomList: TfrmRecomList
   Top = 0
   BorderIcons = [biSystemMenu, biMaximize]
   Caption = 'frmRecomList'
-  ClientHeight = 411
-  ClientWidth = 992
+  ClientHeight = 409
+  ClientWidth = 984
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -20,7 +20,7 @@ object frmRecomList: TfrmRecomList
     AlignWithMargins = True
     Left = 524
     Top = 3
-    Height = 405
+    Height = 403
     Beveled = True
     ResizeStyle = rsUpdate
     OnMoved = SplMoved
@@ -32,29 +32,29 @@ object frmRecomList: TfrmRecomList
     Left = 0
     Top = 0
     Width = 521
-    Height = 411
+    Height = 409
     Align = alLeft
     Caption = 'pnlLeftCmn'
     TabOrder = 0
-    ExplicitHeight = 410
+    ExplicitHeight = 408
     object pnlLeftTop: TPanel
       Left = 1
       Top = 1
       Width = 519
-      Height = 367
+      Height = 365
       Align = alClient
       Caption = 'pnlLeftTop'
       ParentColor = True
       TabOrder = 0
-      ExplicitHeight = 366
+      ExplicitHeight = 364
       DesignSize = (
         519
-        367)
+        365)
       object vst: TVirtualStringTree
         Left = 8
         Top = 8
         Width = 343
-        Height = 355
+        Height = 353
         Anchors = [akLeft, akTop, akRight, akBottom]
         Header.AutoSizeIndex = 0
         Header.MainColumn = -1
@@ -107,25 +107,25 @@ object frmRecomList: TfrmRecomList
       end
       object chbPreview: TCheckBox
         Left = 357
-        Top = 346
+        Top = 344
         Width = 155
         Height = 17
         Anchors = [akRight, akBottom]
         Caption = #1055#1088#1077#1076#1086#1089#1084#1086#1090#1088' '#1092#1072#1081#1083#1086#1074
         TabOrder = 5
         OnClick = chbPreviewClick
-        ExplicitTop = 345
+        ExplicitTop = 343
       end
     end
     object pnlLeftBottom: TPanel
       Left = 1
-      Top = 368
+      Top = 366
       Width = 519
       Height = 42
       Align = alBottom
       Caption = 'pnlLeftBottom'
       TabOrder = 1
-      ExplicitTop = 367
+      ExplicitTop = 365
       DesignSize = (
         519
         42)
@@ -161,31 +161,34 @@ object frmRecomList: TfrmRecomList
   object pnlPreview: TPanel
     Left = 530
     Top = 0
-    Width = 462
-    Height = 411
+    Width = 454
+    Height = 409
     Align = alClient
     Caption = 'pnlPreview'
     DoubleBuffered = True
     ParentDoubleBuffered = False
     ShowCaption = False
     TabOrder = 1
+    ExplicitWidth = 450
+    ExplicitHeight = 408
     DesignSize = (
-      462
-      411)
+      454
+      409)
     object Label1: TLabel
-      Left = 177
-      Top = 382
+      Left = 169
+      Top = 380
       Width = 106
       Height = 15
       Anchors = [akRight, akBottom]
       Caption = #1055#1086#1083#1086#1089#1099' '#1087#1088#1086#1082#1088#1091#1090#1082#1080
       ExplicitLeft = 179
+      ExplicitTop = 382
     end
     object REdt: TRichEdit
       Left = 3
       Top = 9
-      Width = 447
-      Height = 355
+      Width = 439
+      Height = 353
       Anchors = [akLeft, akTop, akRight, akBottom]
       Font.Charset = RUSSIAN_CHARSET
       Font.Color = clWindowText
@@ -198,37 +201,32 @@ object frmRecomList: TfrmRecomList
       ReadOnly = True
       ScrollBars = ssBoth
       TabOrder = 0
-      ExplicitWidth = 443
-      ExplicitHeight = 354
+      ExplicitWidth = 435
+      ExplicitHeight = 352
     end
     object chbWordWrap: TCheckBox
       Left = 3
-      Top = 381
+      Top = 379
       Width = 166
       Height = 17
       Anchors = [akLeft, akBottom]
       Caption = #1056#1072#1079#1088#1077#1096#1080#1090#1100' '#1087#1077#1088#1077#1085#1086#1089' '#1089#1083#1086#1074
       TabOrder = 1
       OnClick = chbWordWrapClick
-      ExplicitTop = 380
+      ExplicitTop = 378
     end
     object cbbScrollbar: TComboBox
-      Left = 289
-      Top = 379
+      Left = 281
+      Top = 377
       Width = 161
       Height = 23
       Style = csDropDownList
       Anchors = [akRight, akBottom]
       TabOrder = 2
       OnChange = cbbScrollbarChange
-      ExplicitLeft = 285
-      ExplicitTop = 378
+      ExplicitLeft = 277
+      ExplicitTop = 376
     end
-  end
-  object oDlg: TOpenDialog
-    Filter = #1092#1086#1088#1084#1072#1090#1099' '#1089' '#1090#1077#1082#1089#1090#1086#1084'|*.txt;*.doc;*.docx;*.rtf;*.odt'
-    Left = 16
-    Top = 8
   end
   object actList: TActionList
     Left = 58
@@ -236,30 +234,42 @@ object frmRecomList: TfrmRecomList
     object actGroupAdd: TAction
       Category = 'Nodes'
       Caption = 'actGroupAdd'
+      OnExecute = actGroupAddExecute
     end
     object actItemAdd: TAction
       Category = 'Nodes'
       Caption = 'actItemAdd'
+      OnExecute = actItemAddExecute
     end
     object actNodeEdt: TAction
       Category = 'Nodes'
       Caption = 'actNodeEdt'
+      OnExecute = actNodeEdtExecute
     end
     object actNodeDel: TAction
       Category = 'Nodes'
       Caption = 'actNodeDel'
+      OnExecute = actNodeDelExecute
     end
     object ActPrint: TAction
       Category = 'Execute'
       Caption = 'ActPrint'
+      OnExecute = ActPrintExecute
     end
     object ActHelp: TAction
       Category = 'Execute'
       Caption = 'ActHelp'
+      OnExecute = ActHelpExecute
     end
     object actClose: TAction
       Category = 'Execute'
       Caption = 'actClose'
+      OnExecute = actCloseExecute
+    end
+    object actCallNodeInfo: TAction
+      Category = 'Nodes'
+      Caption = 'actCallNodeInfo'
+      OnExecute = actCallNodeInfoExecute
     end
   end
   object imgList: TImageList

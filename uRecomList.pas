@@ -24,9 +24,15 @@ uses
   , System.ImageList
   , Vcl.ImgList
   , System.UITypes
+  , vcl.Menus
   ;
 
 type
+  { TODO : убрать тут объявление и подключить MainAndrUnit }
+  TEditMode = (emAdd, emEdit);
+
+  TNodeInfoMode = (nimGroup, nimItem); //что добавляем название группы/название пункта списка
+
   PItemsRec = ^TItemsRec;
   TItemsRec = record
     NodeID: Integer;//счетчик
@@ -39,7 +45,6 @@ type
   end;
 
   TfrmRecomList = class(TForm)
-    oDlg: TOpenDialog;
     Spl: TSplitter;
     actList: TActionList;
     actGroupAdd: TAction;
@@ -67,6 +72,7 @@ type
     chbWordWrap: TCheckBox;
     Label1: TLabel;
     cbbScrollbar: TComboBox;
+    actCallNodeInfo: TAction;
     procedure FormCreate(Sender: TObject);
     procedure vstGetNodeDataSize(Sender: TBaseVirtualTree; var NodeDataSize: Integer);
     procedure vstFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -84,29 +90,117 @@ type
     procedure SplMoved(Sender: TObject);
     procedure chbWordWrapClick(Sender: TObject);
     procedure cbbScrollbarChange(Sender: TObject);
+    procedure actCallNodeInfoExecute(Sender: TObject);
+    procedure actGroupAddExecute(Sender: TObject);
+    procedure actItemAddExecute(Sender: TObject);
+    procedure actNodeEdtExecute(Sender: TObject);
+    procedure actNodeDelExecute(Sender: TObject);
+    procedure ActPrintExecute(Sender: TObject);
+    procedure ActHelpExecute(Sender: TObject);
+    procedure actCloseExecute(Sender: TObject);
   private
     FKeybrdLayoutNum: Integer;
     FNodeCounter: Integer;
-//    FpnlPreviewPrevWidth: Integer;
-//    FpnlLeftCnmPrevWidth: Integer;
-//    FIsAllowResizepnlPreview: Boolean;
+    FNodeInfoMode: TNodeInfoMode;
+    FEditMode: TEditMode;
   public
     { Public declarations }
     property KeybrdLayoutNum: Integer read FKeybrdLayoutNum;//номер текущей раскладки
     property NodeCounter: Integer read FNodeCounter;//счетчик для Node ID
-//    property pnlLeftCnmPrevWidth: Integer read FpnlLeftCnmPrevWidth;//ширина pnlLeftCnm до ресайза
-//    property pnlPreviewPrevWidth: Integer read FpnlPreviewPrevWidth;//ширина pnlPreview до ресайза
-//    property IsAllowResizepnlPreview: Boolean read FIsAllowResizepnlPreview;//разрешение запоминать ширину pnlPreview
+    property NodeInfoMode: TNodeInfoMode read FNodeInfoMode;//вид добавляемого узла
+    property EditMode: TEditMode read FEditMode;//режим редактирования узла
   end;
 
-const
-  InitDir = 'c:\proj\test_delphi\delphi_recomlist\recom';
+
 var
   frmRecomList: TfrmRecomList;
 
 implementation
 
 {$R *.dfm}
+
+uses uNodeInfo;
+
+procedure TfrmRecomList.actCallNodeInfoExecute(Sender: TObject);
+var
+  tmpFrm: TfrmNodeInfo;
+  Node, ParNode: PVirtualNode;
+  Data: PItemsRec;
+begin
+  tmpFrm:= TfrmNodeInfo.Create(Self);
+  Node:= nil;
+  ParNode:= nil;
+
+  try
+    with tmpFrm do
+    begin
+      NodeInfoMode:= Self.NodeInfoMode;
+      EditMode:= Self.EditMode;
+
+      case FEditMode of
+        emAdd:
+          begin
+            edtItemName.Clear;
+            if (NodeInfoMode = nimItem) then REdt.Clear;
+          end;
+        emEdit:
+          begin
+
+          end;
+      end;
+
+      ShowModal;
+    end;
+  finally
+    FreeAndNil(tmpFrm);
+  end;
+
+end;
+
+procedure TfrmRecomList.actCloseExecute(Sender: TObject);
+begin
+//
+end;
+
+procedure TfrmRecomList.actGroupAddExecute(Sender: TObject);
+begin
+  FNodeInfoMode:= nimGroup;
+  FEditMode:= emAdd;
+  actCallNodeInfoExecute(Sender);
+end;
+
+procedure TfrmRecomList.ActHelpExecute(Sender: TObject);
+begin
+//
+end;
+
+procedure TfrmRecomList.actItemAddExecute(Sender: TObject);
+begin
+  FNodeInfoMode:= nimItem;
+  FEditMode:= emAdd;
+  actCallNodeInfoExecute(Sender);
+end;
+
+procedure TfrmRecomList.actNodeDelExecute(Sender: TObject);
+begin
+//
+end;
+
+procedure TfrmRecomList.actNodeEdtExecute(Sender: TObject);
+var
+  NodeLvl: Integer;
+  Node: PVirtualNode;
+begin
+  if (vst.RootNodeCount = 0) then Exit;
+
+  FEditMode:= emAdd;
+  actCallNodeInfoExecute(Sender);
+end;
+
+procedure TfrmRecomList.ActPrintExecute(Sender: TObject);
+begin
+//
+end;
 
 procedure TfrmRecomList.cbbScrollbarChange(Sender: TObject);
 var
@@ -118,6 +212,7 @@ begin
     2: sbValue:= TScrollStyle.ssHorizontal; // горизонтальная
     3: sbValue:= TScrollStyle.ssNone; // отсутствуют
   end;
+  REdt.ScrollBars:= sbValue;
 end;
 
 procedure TfrmRecomList.chbPreviewClick(Sender: TObject);
@@ -177,9 +272,6 @@ procedure TfrmRecomList.FormCreate(Sender: TObject);
 var
   i: Integer;
 begin
-  oDlg.Filter:= 'файлы с текстом(*.txt;*.doc;*.docx;*.rtf;*.odt)|*.txt;*.doc;*.docx;*.rtf;*.odt';
-  oDlg.InitialDir:= InitDir;
-
   for i := 0 to Pred(Self.ControlCount) do
     if TControl(Self.Controls[i]).InheritsFrom(TPanel) then
     begin
@@ -283,6 +375,32 @@ begin
       end;
     end;
   end;
+
+  Self.ShowHint:= True;
+
+  actGroupAdd.ShortCut:= TextToShortCut(ShortCutAdd);
+  btnGroupAdd.OnClick:= actGroupAddExecute;
+  btnGroupAdd.Hint:= ShortCutAdd;
+
+  actItemAdd.ShortCut:= TextToShortCut(ShortCutAddMore);
+  btnItemAdd.OnClick:= actItemAddExecute;
+  btnItemAdd.Hint:= ShortCutAddMore;
+
+  actNodeEdt.ShortCut:= TextToShortCut(ShortCutEdit);
+  btnItemEdit.OnClick:= actNodeEdtExecute;
+  btnItemEdit.Hint:= ShortCutEdit;
+
+  actNodeDel.ShortCut:= TextToShortCut(ShortCutDel);
+  btnItemDelete.OnClick:= actNodeDelExecute;
+  btnItemDelete.Hint:= ShortCutDel;
+
+  ActPrint.ShortCut:= TextToShortCut(ShortCutPrint);
+  btnPrint.OnClick:= ActPrintExecute;
+  btnPrint.Hint:= ShortCutPrint;
+
+  ActHelp.ShortCut:= TextToShortCut(ShortCutHelp);
+  btnHelp.OnClick:= ActHelpExecute;
+  btnHelp.Hint:= ShortCutHelp;
 end;
 
 procedure TfrmRecomList.FormResize(Sender: TObject);
@@ -308,6 +426,7 @@ begin
   SetLastUsedKeyLayout(KeybrdLayoutNum);
   chbPreviewClick(Sender);
   chbWordWrapClick(Sender);
+  cbbScrollbarChange(Sender);
 //  FpnlLeftCnmPrevWidth:= pnlLeftCmn.Width;
 //  FpnlPreviewPrevWidth:= pnlPreview.Width;
 end;

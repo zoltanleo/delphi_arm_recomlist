@@ -1,5 +1,11 @@
 # delphi_arm_recomlist
 
+0.0.4
+- added frmNodeInfo
+- basic design of frmNodeInfo
+
+![](pict/rec_list_03.gif)
+
 0.0.3
 - saving form settings is implemented
 

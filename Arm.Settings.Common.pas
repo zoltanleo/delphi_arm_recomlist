@@ -78,6 +78,8 @@ type
                   , soFrmUZIGenit
                   , soFrmUZIRen
                   , sofrmRecomList
+                  , sofrmNodeInfoGroup
+                  , sofrmNodeInfoItem
                   );
 
   {from here https://www.gunsmoker.ru/2011/04/blog-post.html}
@@ -265,7 +267,8 @@ begin
       , soFrmUrScopiaDry
       , soFrmUrScopiaIrrig
       , soFrmUZIGenit
-      , soFrmUZIRen:
+      , soFrmUZIRen
+      , sofrmNodeInfoGroup:
         begin
           Top     := SettingsFile.ReadInteger(SectName, 'Top_Single', Top);
           Left    := SettingsFile.ReadInteger(SectName, 'Left_Single', Left);
@@ -414,7 +417,8 @@ begin
         , soFrmUrScopiaDry
         , soFrmUrScopiaIrrig
         , soFrmUZIGenit
-        , soFrmUZIRen:
+        , soFrmUZIRen
+        , sofrmNodeInfoGroup:
           begin
             SettingsFile.WriteInteger (Name, 'Top_Single', Top);
             SettingsFile.WriteInteger (Name, 'Left_Single', Left);
