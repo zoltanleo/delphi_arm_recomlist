@@ -59,14 +59,17 @@ object frmRecomList: TfrmRecomList
         Header.AutoSizeIndex = 0
         Header.MainColumn = -1
         TabOrder = 0
+        OnAddToSelection = vstAddToSelection
         OnFreeNode = vstFreeNode
         OnGetText = vstGetText
         OnPaintText = vstPaintText
         OnGetNodeDataSize = vstGetNodeDataSize
         OnHeaderDraw = vstHeaderDraw
+        OnRemoveFromSelection = vstRemoveFromSelection
         OnResize = vstResize
         Touch.InteractiveGestures = [igPan, igPressAndTap]
         Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia, igoPanGutter, igoParentPassthrough]
+        ExplicitHeight = 352
         Columns = <>
       end
       object btnGroupAdd: TButton
@@ -87,7 +90,7 @@ object frmRecomList: TfrmRecomList
         Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1088#1077#1082#1086#1084#1077#1085#1076#1072#1094#1080#1102
         TabOrder = 2
       end
-      object btnItemEdit: TButton
+      object btnNodeEdt: TButton
         Left = 357
         Top = 70
         Width = 155
@@ -96,7 +99,7 @@ object frmRecomList: TfrmRecomList
         Caption = #1056#1077#1076#1072#1082#1090#1080#1088#1086#1074#1072#1090#1100
         TabOrder = 3
       end
-      object btnItemDelete: TButton
+      object btnNodeDel: TButton
         Left = 357
         Top = 101
         Width = 155
@@ -139,22 +142,31 @@ object frmRecomList: TfrmRecomList
         TabOrder = 0
       end
       object cbbFmtPrint: TComboBox
-        Left = 357
+        Left = 196
         Top = 10
         Width = 155
         Height = 23
         Style = csDropDownList
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         TabOrder = 1
       end
       object btnPrint: TButton
-        Left = 276
+        Left = 115
+        Top = 9
+        Width = 75
+        Height = 25
+        Anchors = [akLeft, akBottom]
+        Caption = #1055#1077#1095#1072#1090#1100
+        TabOrder = 2
+      end
+      object btnClose: TButton
+        Left = 437
         Top = 9
         Width = 75
         Height = 25
         Anchors = [akRight, akBottom]
-        Caption = #1055#1077#1095#1072#1090#1100
-        TabOrder = 2
+        Caption = #1047#1072#1082#1088#1099#1090#1100
+        TabOrder = 3
       end
     end
   end
@@ -175,7 +187,7 @@ object frmRecomList: TfrmRecomList
       454
       409)
     object Label1: TLabel
-      Left = 169
+      Left = 165
       Top = 380
       Width = 106
       Height = 15
@@ -187,7 +199,7 @@ object frmRecomList: TfrmRecomList
     object REdt: TRichEdit
       Left = 3
       Top = 9
-      Width = 439
+      Width = 435
       Height = 353
       Anchors = [akLeft, akTop, akRight, akBottom]
       Font.Charset = RUSSIAN_CHARSET
@@ -201,7 +213,7 @@ object frmRecomList: TfrmRecomList
       ReadOnly = True
       ScrollBars = ssBoth
       TabOrder = 0
-      ExplicitWidth = 435
+      ExplicitWidth = 431
       ExplicitHeight = 352
     end
     object chbWordWrap: TCheckBox
@@ -216,7 +228,7 @@ object frmRecomList: TfrmRecomList
       ExplicitTop = 378
     end
     object cbbScrollbar: TComboBox
-      Left = 281
+      Left = 277
       Top = 377
       Width = 161
       Height = 23
@@ -224,13 +236,13 @@ object frmRecomList: TfrmRecomList
       Anchors = [akRight, akBottom]
       TabOrder = 2
       OnChange = cbbScrollbarChange
-      ExplicitLeft = 277
+      ExplicitLeft = 273
       ExplicitTop = 376
     end
   end
   object actList: TActionList
     Left = 58
-    Top = 8
+    Top = 16
     object actGroupAdd: TAction
       Category = 'Nodes'
       Caption = 'actGroupAdd'
@@ -271,11 +283,16 @@ object frmRecomList: TfrmRecomList
       Caption = 'actCallNodeInfo'
       OnExecute = actCallNodeInfoExecute
     end
+    object actChkStatusBtn: TAction
+      Category = 'Nodes'
+      Caption = 'actChkStatusBtn'
+      OnExecute = actChkStatusBtnExecute
+    end
   end
   object imgList: TImageList
     ColorDepth = cd32Bit
-    Left = 104
-    Top = 8
+    Left = 112
+    Top = 16
     Bitmap = {
       494C010102000800040010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
@@ -415,5 +432,9 @@ object frmRecomList: TfrmRecomList
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000}
+  end
+  object oDlg: TOpenDialog
+    Left = 193
+    Top = 17
   end
 end

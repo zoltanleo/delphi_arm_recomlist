@@ -35,13 +35,13 @@ type
 
   PItemsRec = ^TItemsRec;
   TItemsRec = record
-    NodeID: Integer;//счетчик
-    ParentID: Integer;//ID родителя (для узлов в корне дерева = 0)
+    NodeUID: string;//GUID
+    ParentUID: string;//GUID родителя (для узлов в корне пустая строка)
     IsGroupName: Integer;//заголовок группы (True = 1)
     PathIsExists: Integer;//корректность пути к файлу (для несущестующих 0, для заголовков групп -1)
     ItemName: string;//название исследования/заголовка группы
     ItemPath: string;//путь к файлу (для заголовков пусто)
-    ItemEncod: string;//последняя использованная при открытии кодировка файла
+    ItemEncod: Integer;//последняя использованная при открытии кодировка файла
   end;
 
   TfrmRecomList = class(TForm)
@@ -60,8 +60,8 @@ type
     vst: TVirtualStringTree;
     btnGroupAdd: TButton;
     btnItemAdd: TButton;
-    btnItemEdit: TButton;
-    btnItemDelete: TButton;
+    btnNodeEdt: TButton;
+    btnNodeDel: TButton;
     pnlLeftBottom: TPanel;
     btnHelp: TButton;
     cbbFmtPrint: TComboBox;
@@ -73,6 +73,9 @@ type
     Label1: TLabel;
     cbbScrollbar: TComboBox;
     actCallNodeInfo: TAction;
+    actChkStatusBtn: TAction;
+    btnClose: TButton;
+    oDlg: TOpenDialog;
     procedure FormCreate(Sender: TObject);
     procedure vstGetNodeDataSize(Sender: TBaseVirtualTree; var NodeDataSize: Integer);
     procedure vstFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -98,15 +101,17 @@ type
     procedure ActPrintExecute(Sender: TObject);
     procedure ActHelpExecute(Sender: TObject);
     procedure actCloseExecute(Sender: TObject);
+    procedure actChkStatusBtnExecute(Sender: TObject);
+    procedure vstAddToSelection(Sender: TBaseVirtualTree; Node: PVirtualNode);
+    procedure vstRemoveFromSelection(Sender: TBaseVirtualTree; Node: PVirtualNode);
   private
     FKeybrdLayoutNum: Integer;
-    FNodeCounter: Integer;
     FNodeInfoMode: TNodeInfoMode;
     FEditMode: TEditMode;
+    function GetUID: string;
   public
     { Public declarations }
     property KeybrdLayoutNum: Integer read FKeybrdLayoutNum;//номер текущей раскладки
-    property NodeCounter: Integer read FNodeCounter;//счетчик для Node ID
     property NodeInfoMode: TNodeInfoMode read FNodeInfoMode;//вид добавляемого узла
     property EditMode: TEditMode read FEditMode;//режим редактирования узла
   end;
@@ -125,11 +130,13 @@ procedure TfrmRecomList.actCallNodeInfoExecute(Sender: TObject);
 var
   tmpFrm: TfrmNodeInfo;
   Node, ParNode: PVirtualNode;
-  Data: PItemsRec;
+  Data, ParData: PItemsRec;
 begin
   tmpFrm:= TfrmNodeInfo.Create(Self);
   Node:= nil;
+  Data:= nil;
   ParNode:= nil;
+  ParData:= nil;
 
   try
     with tmpFrm do
@@ -137,29 +144,173 @@ begin
       NodeInfoMode:= Self.NodeInfoMode;
       EditMode:= Self.EditMode;
 
+      if (NodeInfoMode = nimItem) then
+      begin
+        cbbGroup.Items.Clear;
+        if (vst.RootNodeCount > 0) then
+        begin
+          Node:= vst.GetFirst;
+          while not Assigned(Node) do
+          begin
+            Data:= vst.GetNodeData(Node);
+            if (Data^.IsGroupName = 1) then
+            cbbGroup.Items.Add(Data^.ItemName);
+          end;
+        end;
+      end;
+
       case FEditMode of
         emAdd:
           begin
             edtItemName.Clear;
             if (NodeInfoMode = nimItem) then REdt.Clear;
+
+            if (vst.RootNodeCount = 0)
+              then ParNode:= nil
+              else
+                begin
+                  if (vst.SelectedCount = 0)
+                    then Node:= vst.GetFirst
+                    else Node:= vst.GetFirstSelected;
+
+                  ParNode:= nil;
+                  if Assigned(Node) then
+                    if (vst.GetNodeLevel(Node) = 1) then
+                      ParNode:= Node^.Parent;
+                end;
           end;
         emEdit:
           begin
+            Node:= vst.GetFirstSelected;
+            if not Assigned(Node) then Exit;
 
+            Data:= vst.GetNodeData(Node);
+            if Assigned(Data) then
+            begin
+              edtItemName.Text:= Data^.ItemName;
+
+              if (NodeInfoMode = nimItem) then
+              begin
+                if FileExists(Data^.ItemPath) then
+                begin
+                  case Data^.ItemEncod of
+                    0: REdt.Lines.LoadFromFile(oDlg.FileName);
+                    1: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.ANSI);
+                    2: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.UTF8);
+                    3: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.Unicode);
+                    4: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.BigEndianUnicode);
+                  end;
+
+                  cbbFileEncode.ItemIndex:= Data^.ItemEncod;
+                end;
+              end;
+            end;
           end;
       end;
 
       ShowModal;
+      if (ModalResult = mrOk) then
+      begin
+        case EditMode of
+          emAdd:
+            begin
+              Node:= vst.AddChild(ParNode);
+              Data:= vst.GetNodeData(Node);
+              Data^.ItemName:= Trim(edtItemName.Text);
+
+              case NodeInfoMode of
+                nimGroup:
+                  begin
+                    Data^.NodeUID:= GetUID;
+                    Data^.ParentUID:= '';
+                    Data^.IsGroupName:= 1;
+                    Data^.ItemPath:= '';
+                    Data^.ItemEncod:= 0;
+                    !
+                  end;
+                nimItem: ;
+              end;
+            end;
+          emEdit:
+            begin
+              Data:= vst.GetNodeData(Node);
+              if Assigned(Data) then
+              begin
+                Data^.ItemName:= Trim(edtItemName.Text);
+
+                if (NodeInfoMode = nimItem) then
+                begin
+                  Data^.ItemPath:= NodeFilePath;
+                  Data^.ItemEncod:= cbbFileEncode.ItemIndex;
+                end;
+              end;
+            end;
+        end;
+      end;
     end;
   finally
+    vst.Refresh;
+    actChkStatusBtnExecute(Sender);
     FreeAndNil(tmpFrm);
   end;
+//    NodeUID: string;//GUID
+//    ParentUID: string;//GUID родителя (для узлов в корне пустая строка)
+//    IsGroupName: Integer;//заголовок группы (True = 1)
+//    PathIsExists: Integer;//корректность пути к файлу (для несущестующих 0, для заголовков групп -1)
+//    ItemName: string;//название исследования/заголовка группы
+//    ItemPath: string;//путь к файлу (для заголовков пусто)
+//    ItemEncod: Integer;//последняя использованная при открытии кодировка файла
+end;
 
+procedure TfrmRecomList.actChkStatusBtnExecute(Sender: TObject);
+var
+  Node: PVirtualNode;
+  Data: PItemsRec;
+begin
+  Data:= nil;
+  Node:= nil;
+
+  if (csDestroying in ComponentState) then Exit;
+
+  actItemAdd.Enabled:= (vst.SelectedCount <= 1);
+  actNodeEdt.Enabled:= ((vst.RootNodeCount > 0) and (vst.SelectedCount = 1));
+  actNodeDel.Enabled:= ((vst.RootNodeCount > 0) and (vst.SelectedCount > 0));
+  btnItemAdd.Enabled:= actItemAdd.Enabled;
+  btnNodeEdt.Enabled:= actNodeEdt.Enabled;
+  btnNodeDel.Enabled:= actNodeDel.Enabled;
+
+  ActPrint.Enabled:= False;
+
+  if (vst.RootNodeCount > 0) then
+  begin
+    if (vst.SelectedCount = 0) then Node:= vst.GetFirst;
+    if (vst.SelectedCount > 1) then Node:= vst.GetFirstSelected;
+
+    Data:= vst.GetNodeData(Node);
+    if Assigned(Data) then
+      ActPrint.Enabled:= ((vst.SelectedCount = 1)
+                          and (Data^.IsGroupName = 0)
+                            and FileExists(Data^.ItemPath));
+    if (FileExists(Data^.ItemPath) and chbPreview.Checked) then
+    begin
+      case Data^.ItemEncod of
+        1: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.ANSI);
+        2: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.UTF8);
+        3: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.Unicode);
+        4: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.BigEndianUnicode);
+        else
+          REdt.Lines.LoadFromFile(oDlg.FileName);
+      end;
+    end;
+  end;
+
+  btnPrint.Enabled:= ActPrint.Enabled;
+  cbbFmtPrint.Enabled:= ActPrint.Enabled;
 end;
 
 procedure TfrmRecomList.actCloseExecute(Sender: TObject);
 begin
-//
+  Self.Close;
 end;
 
 procedure TfrmRecomList.actGroupAddExecute(Sender: TObject);
@@ -193,7 +344,21 @@ var
 begin
   if (vst.RootNodeCount = 0) then Exit;
 
-  FEditMode:= emAdd;
+  if (vst.SelectedCount = 0) then
+  begin
+//    Node:= vst.GetFirst;
+//    vst.Selected[Node]:= True;
+    Application.MessageBox('Вы должны выделить редактируемый узел!',
+                          'Недостаточно данных', MB_ICONINFORMATION);
+    Exit;
+  end;
+
+  case vst.GetNodeLevel(Node) of
+    0: FNodeInfoMode:= nimGroup;
+    1: FNodeInfoMode:= nimItem;
+  end;
+
+  FEditMode:= emEdit;
   actCallNodeInfoExecute(Sender);
 end;
 
@@ -272,6 +437,8 @@ procedure TfrmRecomList.FormCreate(Sender: TObject);
 var
   i: Integer;
 begin
+  oDlg.Filter:= 'файлы с текстом(*.txt;*.rtf)|*.txt;*.rtf';
+
   for i := 0 to Pred(Self.ControlCount) do
     if TControl(Self.Controls[i]).InheritsFrom(TPanel) then
     begin
@@ -307,11 +474,10 @@ begin
 
   Spl.Margins.Top:= vst.Top;
   Spl.Margins.Bottom:= vst.Top;
-  pnlLeftCmn.Constraints.MinWidth:= 500;
+  pnlLeftCmn.Constraints.MinWidth:= 520;
   pnlLeftCmn.Constraints.MinHeight:= 400;
   pnlPreview.Constraints.MinWidth:= 460;
 
-  FNodeCounter:= 0;
 
   with vst do
   begin
@@ -387,12 +553,12 @@ begin
   btnItemAdd.Hint:= ShortCutAddMore;
 
   actNodeEdt.ShortCut:= TextToShortCut(ShortCutEdit);
-  btnItemEdit.OnClick:= actNodeEdtExecute;
-  btnItemEdit.Hint:= ShortCutEdit;
+  btnNodeEdt.OnClick:= actNodeEdtExecute;
+  btnNodeEdt.Hint:= ShortCutEdit;
 
   actNodeDel.ShortCut:= TextToShortCut(ShortCutDel);
-  btnItemDelete.OnClick:= actNodeDelExecute;
-  btnItemDelete.Hint:= ShortCutDel;
+  btnNodeDel.OnClick:= actNodeDelExecute;
+  btnNodeDel.Hint:= ShortCutDel;
 
   ActPrint.ShortCut:= TextToShortCut(ShortCutPrint);
   btnPrint.OnClick:= ActPrintExecute;
@@ -401,6 +567,10 @@ begin
   ActHelp.ShortCut:= TextToShortCut(ShortCutHelp);
   btnHelp.OnClick:= ActHelpExecute;
   btnHelp.Hint:= ShortCutHelp;
+
+  actClose.ShortCut:= TextToShortCut(ShortCutCancel);
+  btnClose.OnClick:= actCloseExecute;
+  btnClose.Hint:= ShortCutCancel;
 end;
 
 procedure TfrmRecomList.FormResize(Sender: TObject);
@@ -427,8 +597,17 @@ begin
   chbPreviewClick(Sender);
   chbWordWrapClick(Sender);
   cbbScrollbarChange(Sender);
-//  FpnlLeftCnmPrevWidth:= pnlLeftCmn.Width;
-//  FpnlPreviewPrevWidth:= pnlPreview.Width;
+  actChkStatusBtnExecute(Sender);
+end;
+
+function TfrmRecomList.GetUID: string;
+var
+  tmpGUID: TGUID;
+begin
+  Result:= '';
+  if (CreateGUID(tmpGUID) = 0)
+    then Result:= GUIDToString(tmpGUID)
+    else Result:= FormatDateTime('yyyy.mm.dd_hh:nn:ss.zzz', Now);
 end;
 
 procedure TfrmRecomList.SplMoved(Sender: TObject);
@@ -439,6 +618,11 @@ begin
 //      if (pnlLeftCnmPrevWidth < Spl.Left)
 //        then Caption:= Format('сдвиг вправо на: %d px',[Spl.left - pnlLeftCnmPrevWidth])
 //        else Caption:= 'стоим на месте';
+end;
+
+procedure TfrmRecomList.vstAddToSelection(Sender: TBaseVirtualTree; Node: PVirtualNode);
+begin
+  ActChkStatusBtnExecute(Sender);
 end;
 
 procedure TfrmRecomList.vstFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -530,6 +714,11 @@ begin
 //      if (Data^.CurrentCost <> Data^.InitCost) then
 //        TargetCanvas.Font.Style:= TargetCanvas.Font.Style + [TFontStyle.fsBold];
   end;
+end;
+
+procedure TfrmRecomList.vstRemoveFromSelection(Sender: TBaseVirtualTree; Node: PVirtualNode);
+begin
+  ActChkStatusBtnExecute(Sender);
 end;
 
 procedure TfrmRecomList.vstResize(Sender: TObject);

@@ -3,8 +3,8 @@ object frmNodeInfo: TfrmNodeInfo
   Top = 0
   BorderIcons = [biSystemMenu, biMaximize]
   Caption = 'frmNodeInfo'
-  ClientHeight = 325
-  ClientWidth = 591
+  ClientHeight = 324
+  ClientWidth = 587
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,14 +18,14 @@ object frmNodeInfo: TfrmNodeInfo
   object pnlGroup: TPanel
     Left = 0
     Top = 0
-    Width = 591
+    Width = 587
     Height = 41
     Align = alTop
     Caption = 'pnlGroup'
     TabOrder = 0
-    ExplicitWidth = 587
+    ExplicitWidth = 583
     DesignSize = (
-      591
+      587
       41)
     object Label1: TLabel
       Left = 8
@@ -37,46 +37,46 @@ object frmNodeInfo: TfrmNodeInfo
     object cbbGroup: TComboBox
       Left = 110
       Top = 8
-      Width = 300
+      Width = 296
       Height = 23
       Style = csDropDownList
       Anchors = [akLeft, akTop, akRight]
       TabOrder = 0
-      ExplicitWidth = 296
+      ExplicitWidth = 292
     end
   end
   object pnlButtons: TPanel
     Left = 0
-    Top = 281
-    Width = 591
+    Top = 280
+    Width = 587
     Height = 44
     Align = alBottom
     Caption = 'pnlButtons'
     TabOrder = 1
-    ExplicitTop = 280
-    ExplicitWidth = 587
+    ExplicitTop = 279
+    ExplicitWidth = 583
     DesignSize = (
-      591
+      587
       44)
     object btnCancel: TButton
-      Left = 509
+      Left = 505
       Top = 12
       Width = 75
       Height = 25
       Anchors = [akRight, akBottom]
       Caption = #1054#1090#1084#1077#1085#1072
       TabOrder = 0
-      ExplicitLeft = 505
+      ExplicitLeft = 501
     end
     object btnSave: TButton
-      Left = 428
+      Left = 424
       Top = 12
       Width = 75
       Height = 25
       Anchors = [akRight, akBottom]
       Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100
       TabOrder = 1
-      ExplicitLeft = 424
+      ExplicitLeft = 420
     end
     object btnHelp: TButton
       Left = 8
@@ -91,34 +91,34 @@ object frmNodeInfo: TfrmNodeInfo
   object pnlCommon: TPanel
     Left = 0
     Top = 41
-    Width = 591
-    Height = 240
+    Width = 587
+    Height = 239
     Align = alClient
     Caption = 'pnlCommon'
     TabOrder = 2
-    ExplicitWidth = 587
-    ExplicitHeight = 239
+    ExplicitWidth = 583
+    ExplicitHeight = 238
     object pnlNodeInfo: TPanel
       Left = 1
       Top = 1
-      Width = 399
-      Height = 238
+      Width = 395
+      Height = 237
       Align = alClient
       Caption = 'pnlNodeInfo'
       TabOrder = 0
-      ExplicitWidth = 395
-      ExplicitHeight = 237
+      ExplicitWidth = 391
+      ExplicitHeight = 236
       object pnlItemName: TPanel
         Left = 1
         Top = 1
-        Width = 397
+        Width = 393
         Height = 52
         Align = alTop
         Caption = 'pnlItemName'
         TabOrder = 0
-        ExplicitWidth = 393
+        ExplicitWidth = 389
         DesignSize = (
-          397
+          393
           52)
         object lblItemName: TLabel
           Left = 7
@@ -130,32 +130,32 @@ object frmNodeInfo: TfrmNodeInfo
         object edtItemName: TEdit
           Left = 7
           Top = 26
-          Width = 386
+          Width = 382
           Height = 23
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 0
           Text = 'edtItemName'
-          ExplicitWidth = 382
+          ExplicitWidth = 378
         end
       end
       object pnlRichEdit: TPanel
         Left = 1
         Top = 53
-        Width = 397
-        Height = 184
+        Width = 393
+        Height = 183
         Align = alClient
         Caption = 'pnlRichEdit'
         TabOrder = 1
-        ExplicitWidth = 393
-        ExplicitHeight = 183
+        ExplicitWidth = 389
+        ExplicitHeight = 182
         DesignSize = (
-          397
-          184)
+          393
+          183)
         object REdt: TRichEdit
           Left = 7
           Top = 2
-          Width = 386
-          Height = 178
+          Width = 382
+          Height = 177
           Anchors = [akLeft, akTop, akRight, akBottom]
           Font.Charset = RUSSIAN_CHARSET
           Font.Color = clWindowText
@@ -167,31 +167,32 @@ object frmNodeInfo: TfrmNodeInfo
           ParentFont = False
           ScrollBars = ssBoth
           TabOrder = 0
-          ExplicitWidth = 382
-          ExplicitHeight = 177
+          ExplicitWidth = 378
+          ExplicitHeight = 176
         end
       end
     end
     object pnlSelectBtn: TPanel
-      Left = 400
+      Left = 396
       Top = 1
       Width = 190
-      Height = 238
+      Height = 237
       Align = alRight
       Caption = 'pnlSelectBtn'
       TabOrder = 1
-      ExplicitLeft = 396
-      ExplicitHeight = 237
+      ExplicitLeft = 392
+      ExplicitHeight = 236
       DesignSize = (
         190
-        238)
+        237)
       object Label2: TLabel
         Left = 6
-        Top = 189
+        Top = 188
         Width = 160
         Height = 15
         Anchors = [akLeft, akBottom]
         Caption = #1050#1086#1076#1080#1088#1086#1074#1082#1072' '#1090#1077#1082#1089#1090#1086#1074#1086#1075#1086' '#1092#1072#1081#1083#1072
+        ExplicitTop = 189
       end
       object btnODlg: TButton
         Left = 5
@@ -204,13 +205,13 @@ object frmNodeInfo: TfrmNodeInfo
       end
       object cbbFileEncode: TComboBox
         Left = 5
-        Top = 210
+        Top = 209
         Width = 178
         Height = 23
         Style = csDropDownList
         Anchors = [akLeft, akRight, akBottom]
         TabOrder = 1
-        ExplicitTop = 209
+        ExplicitTop = 208
       end
     end
   end

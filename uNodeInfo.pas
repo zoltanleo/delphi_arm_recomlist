@@ -60,12 +60,14 @@ type
     FNodeInfoMode: TNodeInfoMode;
     FKeybrdLayoutNum: Integer;
     FEditMode: TEditMode;
+    FNodeFilePath: string;
     { Private declarations }
   public
     { Public declarations }
     property NodeInfoMode: TNodeInfoMode read FNodeInfoMode write FNodeInfoMode;//вид добавляемого узла
     property KeybrdLayoutNum: Integer read FKeybrdLayoutNum;//номер текущей раскладки
     property EditMode: TEditMode read FEditMode write FEditMode;//режим редактирования узла
+    property NodeFilePath: string read FNodeFilePath write FNodeFilePath;//путь к загружаемому файлу
   end;
 
 const
@@ -96,6 +98,8 @@ const
 begin
   if not oDlg.Execute then Exit;
 
+  FNodeFilePath:= oDlg.FileName;
+
   if (ExtractFileExt(oDlg.FileName) = eTxt) then
     case cbbFileEncode.ItemIndex of
       0: REdt.Lines.LoadFromFile(oDlg.FileName);
@@ -123,7 +127,8 @@ begin
 
   FKeybrdLayoutNum:= GetLastUsedKeyLayout;
   Settings.KeybrdLayoutNum:= Self.KeybrdLayoutNum;
-  Settings.SettingsFile.WriteInteger(Self.Name,'cbbFileEncode_ItemIndex', cbbFileEncode.ItemIndex);
+  if (EditMode = emAdd) then
+    Settings.SettingsFile.WriteInteger(Self.Name,'cbbFileEncode_ItemIndex', cbbFileEncode.ItemIndex);
   Settings.Save(Self);
 end;
 
@@ -169,7 +174,7 @@ begin
   end;
 
   FNodeInfoMode:= nimItem;
-//  FNodeInfoMode:= nimGroup;
+  FNodeFilePath:= '';
 
   actOpenFile.ShortCut:= TextToShortCut(ShortCutOpen);
   btnODlg.OnClick:= actOpenFileExecute;
@@ -190,21 +195,24 @@ end;
 
 procedure TfrmNodeInfo.FormShow(Sender: TObject);
 begin
+  pnlGroup.Visible:= ((NodeInfoMode = nimItem) and (cbbGroup.Items.Count > 0));
+  pnlSelectBtn.Visible:= (NodeInfoMode = nimItem);
+  pnlRichEdit.Visible:= (NodeInfoMode = nimItem);
+
   case NodeInfoMode of
     nimGroup: Settings.SenderObject:= sofrmNodeInfoGroup;
     nimItem: Settings.SenderObject:= sofrmNodeInfoItem;
   end;
 
   Settings.Load(Self);
+
   FKeybrdLayoutNum:= Settings.KeybrdLayoutNum;
   SetLastUsedKeyLayout(KeybrdLayoutNum);
-  cbbFileEncode.ItemIndex:= Settings.SettingsFile.ReadInteger(Self.Name,'cbbFileEncode_ItemIndex', 0);
+
+  if (EditMode = emAdd) then
+    cbbFileEncode.ItemIndex:= Settings.SettingsFile.ReadInteger(Self.Name,'cbbFileEncode_ItemIndex', 0);
 
   oDlg.InitialDir:= InitDir;
-
-  pnlGroup.Visible:= (NodeInfoMode = nimItem);
-  pnlSelectBtn.Visible:= (NodeInfoMode = nimItem);
-  pnlRichEdit.Visible:= (NodeInfoMode = nimItem);
 
   case NodeInfoMode of
     nimGroup:
@@ -212,10 +220,17 @@ begin
         lblItemName.Caption:= 'Название группы';
         Self.ClientHeight:= pnlItemName.Height + pnlButtons.Height;
         if pnlGroup.Visible then Self.ClientHeight:= Self.ClientHeight + pnlGroup.Height;
+        Self.BorderStyle:= bsSingle;
+        Self.BorderIcons:= Self.BorderIcons - [biMaximize];
       end;
     nimItem:
       begin
         lblItemName.Caption:= 'Название рекомендации';
+        Self.BorderStyle:= bsSizeable;
+        Self.BorderIcons:= Self.BorderIcons + [biMaximize];
+        Self.ClientHeight:= pnlCommon.Height + pnlButtons.Height;
+        if pnlGroup.Visible then Self.ClientHeight:= Self.ClientHeight + pnlGroup.Height;
+
       end;
   end;
 end;
