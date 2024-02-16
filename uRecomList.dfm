@@ -69,7 +69,6 @@ object frmRecomList: TfrmRecomList
         OnResize = vstResize
         Touch.InteractiveGestures = [igPan, igPressAndTap]
         Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia, igoPanGutter, igoParentPassthrough]
-        ExplicitHeight = 352
         Columns = <>
       end
       object btnGroupAdd: TButton
@@ -213,8 +212,6 @@ object frmRecomList: TfrmRecomList
       ReadOnly = True
       ScrollBars = ssBoth
       TabOrder = 0
-      ExplicitWidth = 431
-      ExplicitHeight = 352
     end
     object chbWordWrap: TCheckBox
       Left = 3
@@ -236,8 +233,6 @@ object frmRecomList: TfrmRecomList
       Anchors = [akRight, akBottom]
       TabOrder = 2
       OnChange = cbbScrollbarChange
-      ExplicitLeft = 273
-      ExplicitTop = 376
     end
   end
   object actList: TActionList

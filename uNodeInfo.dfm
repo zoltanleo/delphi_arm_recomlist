@@ -42,7 +42,6 @@ object frmNodeInfo: TfrmNodeInfo
       Style = csDropDownList
       Anchors = [akLeft, akTop, akRight]
       TabOrder = 0
-      ExplicitWidth = 292
     end
   end
   object pnlButtons: TPanel
@@ -167,8 +166,6 @@ object frmNodeInfo: TfrmNodeInfo
           ParentFont = False
           ScrollBars = ssBoth
           TabOrder = 0
-          ExplicitWidth = 378
-          ExplicitHeight = 176
         end
       end
     end
@@ -211,7 +208,6 @@ object frmNodeInfo: TfrmNodeInfo
         Style = csDropDownList
         Anchors = [akLeft, akRight, akBottom]
         TabOrder = 1
-        ExplicitTop = 208
       end
     end
   end

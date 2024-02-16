@@ -114,7 +114,18 @@ begin
 end;
 
 procedure TfrmNodeInfo.actSaveExecute(Sender: TObject);
+const
+  MsgText= 'Поле "%s" не может быть пустым!';
 begin
+  if (Trim(edtItemName.Text) = '') then
+  begin
+    Application.MessageBox(PChar(Format(MsgText,[lblItemName.Caption])),
+                          'Недостаточно данных',
+                          MB_ICONINFORMATION);
+    if edtItemName.CanFocus then edtItemName.SetFocus;
+    Exit;
+  end;
+
   Self.ModalResult:= mrOk;
 end;
 
@@ -167,12 +178,12 @@ begin
   with cbbFileEncode do
   begin
     Clear;
-
     for i := 0 to Pred(Length(EncodStrArr)) do
       Items.AddObject(EncodStrArr[i],TObject(i));
     ItemIndex:= 0;
   end;
 
+  REdt.ReadOnly:= True;
   FNodeInfoMode:= nimItem;
   FNodeFilePath:= '';
 
@@ -185,17 +196,17 @@ begin
   btnSave.Hint:= ShortCutSave;
 
   actCancel.ShortCut:= TextToShortCut(ShortCutCancel);
-  btnCancel.OnClick:= actSaveExecute;
+  btnCancel.OnClick:= actCancelExecute;
   btnCancel.Hint:= ShortCutCancel;
 
   actHelp.ShortCut:= TextToShortCut(ShortCutHelp);
-  btnHelp.OnClick:= actSaveExecute;
+  btnHelp.OnClick:= actHelpExecute;
   btnHelp.Hint:= ShortCutHelp;
 end;
 
 procedure TfrmNodeInfo.FormShow(Sender: TObject);
 begin
-  pnlGroup.Visible:= ((NodeInfoMode = nimItem) and (cbbGroup.Items.Count > 0));
+  pnlGroup.Visible:= ((NodeInfoMode = nimItem) and (cbbGroup.Items.Count > 1));
   pnlSelectBtn.Visible:= (NodeInfoMode = nimItem);
   pnlRichEdit.Visible:= (NodeInfoMode = nimItem);
 
@@ -233,6 +244,8 @@ begin
 
       end;
   end;
+
+  if edtItemName.CanFocus then edtItemName.SetFocus;
 end;
 
 end.

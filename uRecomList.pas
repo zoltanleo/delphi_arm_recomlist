@@ -38,10 +38,10 @@ type
     NodeUID: string;//GUID
     ParentUID: string;//GUID родителя (для узлов в корне пустая строка)
     IsGroupName: Integer;//заголовок группы (True = 1)
-    PathIsExists: Integer;//корректность пути к файлу (для несущестующих 0, для заголовков групп -1)
+    PathIsExists: Integer;//корректность пути к файлу (для несуществующих 0)
     ItemName: string;//название исследования/заголовка группы
     ItemPath: string;//путь к файлу (для заголовков пусто)
-    ItemEncod: Integer;//последняя использованная при открытии кодировка файла
+    ItemEncod: Integer;//последняя использованная при открытии кодировка файла (для заголовков пусто)
   end;
 
   TfrmRecomList = class(TForm)
@@ -125,18 +125,24 @@ implementation
 {$R *.dfm}
 
 uses uNodeInfo;
+const
+  TreeItemsSection = 'RecomListItems';
 
 procedure TfrmRecomList.actCallNodeInfoExecute(Sender: TObject);
+const
+  FirstItem = 'без группы';
 var
   tmpFrm: TfrmNodeInfo;
   Node, ParNode: PVirtualNode;
   Data, ParData: PItemsRec;
+  k: Integer;
 begin
   tmpFrm:= TfrmNodeInfo.Create(Self);
   Node:= nil;
   Data:= nil;
   ParNode:= nil;
   ParData:= nil;
+  k:=-1;
 
   try
     with tmpFrm do
@@ -147,14 +153,16 @@ begin
       if (NodeInfoMode = nimItem) then
       begin
         cbbGroup.Items.Clear;
+        cbbGroup.Items.Add(FirstItem);
         if (vst.RootNodeCount > 0) then
         begin
           Node:= vst.GetFirst;
-          while not Assigned(Node) do
+          while Assigned(Node) do
           begin
             Data:= vst.GetNodeData(Node);
             if (Data^.IsGroupName = 1) then
             cbbGroup.Items.Add(Data^.ItemName);
+            Node:= Node^.NextSibling;
           end;
         end;
       end;
@@ -164,23 +172,43 @@ begin
           begin
             edtItemName.Clear;
             if (NodeInfoMode = nimItem) then REdt.Clear;
+            ParNode:= nil;
 
-            if (vst.RootNodeCount = 0)
-              then ParNode:= nil
-              else
+            if (vst.RootNodeCount > 0) then
+              if (NodeInfoMode= nimItem) then
+              begin
+                if (vst.SelectedCount = 0)
+                  then Node:= vst.GetFirst
+                  else Node:= vst.GetFirstSelected;
+
+                Data:= vst.GetNodeData(Node);
+
+                if Assigned(Data) then
+                  case vst.GetNodeLevel(Node) of
+                    0: if (Data^.IsGroupName = 1) then ParNode:= Node;
+                    1: if (Data^.IsGroupName = 0) then ParNode:= Node^.Parent;
+                  end;
+
+                if (cbbGroup.Items.Count > 1) then
                 begin
-                  if (vst.SelectedCount = 0)
-                    then Node:= vst.GetFirst
-                    else Node:= vst.GetFirstSelected;
+                  if not Assigned(ParNode)
+                    then cbbGroup.ItemIndex:= 0 //"нет группы"
+                    else
+                      begin
+                        k:= -1;
+                        ParData:= vst.GetNodeData(ParNode);
+                        k:= cbbGroup.Items.IndexOf(ParData^.ItemName);
 
-                  ParNode:= nil;
-                  if Assigned(Node) then
-                    if (vst.GetNodeLevel(Node) = 1) then
-                      ParNode:= Node^.Parent;
+                        if (k <> -1)
+                          then cbbGroup.ItemIndex:= k
+                          else cbbGroup.ItemIndex:=0;
+                      end;
                 end;
+              end;
           end;
         emEdit:
           begin
+//            ! не редактируется любой узел с AV
             Node:= vst.GetFirstSelected;
             if not Assigned(Node) then Exit;
 
@@ -194,69 +222,177 @@ begin
                 if FileExists(Data^.ItemPath) then
                 begin
                   case Data^.ItemEncod of
-                    0: REdt.Lines.LoadFromFile(oDlg.FileName);
-                    1: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.ANSI);
-                    2: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.UTF8);
-                    3: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.Unicode);
-                    4: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.BigEndianUnicode);
+                    0: REdt.Lines.LoadFromFile(Data^.ItemPath);
+                    1: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.ANSI);
+                    2: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.UTF8);
+                    3: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.Unicode);
+                    4: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.BigEndianUnicode);
                   end;
 
                   cbbFileEncode.ItemIndex:= Data^.ItemEncod;
                 end;
+
+                if (cbbGroup.Items.Count > 1) then
+                  if (Data^.ParentUID <> '')
+                  then
+                    begin
+                      ParNode:= vst.GetFirst;
+                      while Assigned(ParNode) do
+                      begin
+                        ParData:=vst.GetNodeData(ParNode);
+                        if (Data^.ParentUID = ParData^.NodeUID) then
+                        begin
+                          k:= -1;
+                          k:= cbbGroup.Items.IndexOf(ParData^.ItemName);
+                          if (k <> -1)
+                            then cbbGroup.ItemIndex:= k
+                            else cbbGroup.ItemIndex:=0;
+                          Break;
+                        end;
+                        ParNode:= ParNode^.NextSibling;
+                      end;
+                    end
+                  else
+                    cbbGroup.ItemIndex:= 0;
               end;
             end;
           end;
       end;
 
       ShowModal;
+
       if (ModalResult = mrOk) then
       begin
         case EditMode of
           emAdd:
-            begin
-              Node:= vst.AddChild(ParNode);
-              Data:= vst.GetNodeData(Node);
-              Data^.ItemName:= Trim(edtItemName.Text);
+            case NodeInfoMode of
+              nimGroup:
+                begin
+                  Node:= vst.AddChild(nil);
+                  Data:= vst.GetNodeData(Node);
+                  Data^.NodeUID:= GetUID;
+                  Data^.ItemName:= Trim(edtItemName.Text);
+                  Data^.ParentUID:= '';
+                  Data^.IsGroupName:= 1;
+                  Data^.PathIsExists:= 0;
+                  Data^.ItemPath:= '';
+                  Data^.ItemEncod:= 0;
+                end;
+              nimItem:
+                begin
+                  ParNode:= nil;
+                  //ищем узел с названием из cbbGroup
+                  if (cbbGroup.Items.Count > 1) then
+                    if (CbbGroup.ItemIndex > 0) then
+                    begin
+                      Node:= vst.GetFirst;
+                      while Assigned(Node) do
+                      begin
+                        Data:= vst.GetNodeData(Node);
+                        if Assigned(Data) then
+                          if (Data^.ItemName = cbbGroup.Items[cbbGroup.ItemIndex]) then
+                          begin
+                            ParNode:= Node;
+                            Break;
+                          end;
+                        Node:= Node^.NextSibling;
+                      end;
+                    end;
 
-              case NodeInfoMode of
-                nimGroup:
+                  Node:= vst.AddChild(ParNode);
+                  Data:= vst.GetNodeData(Node);
+                  Data^.NodeUID:= GetUID;
+                  Data^.ParentUID:= '';
+                  Data^.ItemName:= Trim(edtItemName.Text);
+                  Data^.IsGroupName:= 0;
+                  Data^.PathIsExists:= 1;
+                  Data^.ItemPath:= NodeFilePath;
+                  Data^.ItemEncod:= cbbFileEncode.ItemIndex;
+
+                  if Assigned(ParNode) then
                   begin
-                    Data^.NodeUID:= GetUID;
-                    Data^.ParentUID:= '';
-                    Data^.IsGroupName:= 1;
-                    Data^.ItemPath:= '';
-                    Data^.ItemEncod:= 0;
-                    !
+                    ParData:= vst.GetNodeData(ParNode);
+                    if Assigned(ParData) then Data^.ParentUID:= ParData^.NodeUID;
                   end;
-                nimItem: ;
-              end;
+                end;
             end;
           emEdit:
             begin
-              Data:= vst.GetNodeData(Node);
-              if Assigned(Data) then
+              Node:= vst.GetFirstSelected;
+              if Assigned(Node) then
               begin
-                Data^.ItemName:= Trim(edtItemName.Text);
+                Data:= vst.GetNodeData(Node);
+                if not Assigned(Data) then Exit;
 
-                if (NodeInfoMode = nimItem) then
-                begin
-                  Data^.ItemPath:= NodeFilePath;
-                  Data^.ItemEncod:= cbbFileEncode.ItemIndex;
-                end;
-              end;
+                case NodeInfoMode of
+                  nimGroup: Data^.ItemName:= Trim(edtItemName.Text);
+                  nimItem:
+                    begin
+                      case cbbGroup.Items.Count of
+                        1: //cbbGroup скрыт
+                          begin
+                            Data^.ItemName:= Trim(edtItemName.Text);
+                            Data^.ItemPath:= NodeFilePath;
+                            Data^.ItemEncod:= cbbFileEncode.ItemIndex;
+                          end;
+                        else //в cbbGroup минимум 2 пункта
+                          begin
+                            case cbbGroup.ItemIndex of
+                              0: //без группы
+                                ParNode:= nil;
+                              else//принадлежность какой-то группе
+                                begin
+                                  ParNode:= vst.GetFirst;
+                                  while Assigned(ParNode) do
+                                  begin
+                                    ParData:= vst.GetNodeData(ParNode);
+                                    if Assigned(ParData) then
+                                      if (ParData^.IsGroupName = 1) then
+                                        if (ParData^.ItemName = cbbGroup.Items[cbbGroup.ItemIndex])
+                                          then Break;
+                                    ParNode:= ParNode^.NextSibling;
+                                  end;
+                                end;
+                            end;{case cbbGroup.ItemIndex}
+
+                            vst.DeleteNode(Node);
+                            Node:= vst.AddChild(ParNode);
+                            Data:= vst.GetNodeData(Node);
+
+                            Data^.NodeUID:= GetUID;
+
+                            if Assigned(ParNode)
+                              then Data^.ParentUID:= ParData^.NodeUID
+                              else Data^.ParentUID:= '';
+
+                            Data^.IsGroupName:= 0;
+                            Data^.PathIsExists:= 1;
+                            Data^.ItemName:= Trim(edtItemName.Text);
+                            Data^.ItemPath:= NodeFilePath;
+                            Data^.ItemEncod:= cbbFileEncode.ItemIndex;
+                          end;
+                      end;{case cbbGroup.Items.Count}
+                    end;
+                end;{case NodeInfoMode}
+
+              end;{Assigned(Node)}
             end;
         end;
       end;
     end;
   finally
     vst.Refresh;
+//        vst.TreeOptions.SelectionOptions:= vst.TreeOptions.SelectionOptions - [toMultiselect];
+//        vst.Selected[Node]:= True;
+//        vst.TreeOptions.SelectionOptions:= vst.TreeOptions.SelectionOptions + [toMultiselect];
+//        if vst.CanFocus then vst.SetFocus;
     actChkStatusBtnExecute(Sender);
     FreeAndNil(tmpFrm);
   end;
 //    NodeUID: string;//GUID
 //    ParentUID: string;//GUID родителя (для узлов в корне пустая строка)
 //    IsGroupName: Integer;//заголовок группы (True = 1)
-//    PathIsExists: Integer;//корректность пути к файлу (для несущестующих 0, для заголовков групп -1)
+//    PathIsExists: Integer;//корректность пути к файлу (для несущестующих 0)
 //    ItemName: string;//название исследования/заголовка группы
 //    ItemPath: string;//путь к файлу (для заголовков пусто)
 //    ItemEncod: Integer;//последняя использованная при открытии кодировка файла
@@ -288,19 +424,23 @@ begin
 
     Data:= vst.GetNodeData(Node);
     if Assigned(Data) then
+    begin
       ActPrint.Enabled:= ((vst.SelectedCount = 1)
                           and (Data^.IsGroupName = 0)
                             and FileExists(Data^.ItemPath));
-    if (FileExists(Data^.ItemPath) and chbPreview.Checked) then
-    begin
-      case Data^.ItemEncod of
-        1: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.ANSI);
-        2: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.UTF8);
-        3: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.Unicode);
-        4: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.BigEndianUnicode);
-        else
-          REdt.Lines.LoadFromFile(oDlg.FileName);
-      end;
+
+//      if chbPreview.Checked then
+//        if (FileExists(Data^.ItemPath) and (Data^.IsGroupName = 0))
+//        then
+//          case Data^.ItemEncod of
+//            1: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.ANSI);
+//            2: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.UTF8);
+//            3: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.Unicode);
+//            4: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.BigEndianUnicode);
+//            else
+//              REdt.Lines.LoadFromFile(oDlg.FileName);
+//          end
+//        else REdt.Clear;
     end;
   end;
 
@@ -333,8 +473,27 @@ begin
 end;
 
 procedure TfrmRecomList.actNodeDelExecute(Sender: TObject);
+var
+  Node: PVirtualNode;
 begin
-//
+  if (vst.RootNodeCount = 0) then Exit;
+
+  if (vst.SelectedCount = 0) then
+  begin
+    Application.MessageBox('Вы должны выделить удаляемый узел!',
+                          'Недостаточно данных', MB_ICONINFORMATION);
+    Exit;
+  end;
+
+  Node:= vst.GetFirstSelected;
+
+  if (Node^.ChildCount > 0) then
+    if Application.MessageBox('Выделенный узел содержит вложенные узлы, которые также ' +
+                              'будут удалены. Уверены, что хотите сделать это?',
+                              'Удаление данных', MB_YESNO + MB_ICONINFORMATION) = idNo
+      then Exit;
+
+  vst.DeleteNode(Node);
 end;
 
 procedure TfrmRecomList.actNodeEdtExecute(Sender: TObject);
@@ -420,17 +579,82 @@ begin
 end;
 
 procedure TfrmRecomList.FormClose(Sender: TObject; var Action: TCloseAction);
+var
+  Node, ChNode: PVirtualNode;
+  Data: PItemsRec;
 begin
-  Settings.SenderObject:= sofrmRecomList;
-  FKeybrdLayoutNum:= GetLastUsedKeyLayout;
-  Settings.KeybrdLayoutNum:= Self.KeybrdLayoutNum;
-  Settings.cbbPrintFmt_ItemIndex:= cbbFmtPrint.ItemIndex;
-  Settings.SettingsFile.WriteInteger(Self.Name,'PnlLeftCmn_Width', pnlLeftCmn.Width);
-  Settings.SettingsFile.WriteBool(Self.Name, 'chbPreview_chk',chbPreview.Checked);
-  Settings.SettingsFile.WriteBool(Self.Name, 'chbWordWrap_chk',chbWordWrap.Checked);
-  Settings.SettingsFile.WriteInteger(Self.Name,'cbbScrollbar_ItemIndex', cbbScrollbar.ItemIndex);
+    with Settings do
+    begin
+      SenderObject:= sofrmRecomList;
+      FKeybrdLayoutNum:= GetLastUsedKeyLayout;
+      KeybrdLayoutNum:= Self.KeybrdLayoutNum;
+      cbbPrintFmt_ItemIndex:= cbbFmtPrint.ItemIndex;
+      SettingsFile.WriteInteger(Self.Name,'PnlLeftCmn_Width', pnlLeftCmn.Width);
+      SettingsFile.WriteBool(Self.Name, 'chbPreview_chk',chbPreview.Checked);
+      SettingsFile.WriteBool(Self.Name, 'chbWordWrap_chk',chbWordWrap.Checked);
+      SettingsFile.WriteInteger(Self.Name,'cbbScrollbar_ItemIndex', cbbScrollbar.ItemIndex);
 
-  Settings.Save(Self);
+      if SettingsFile.SectionExists(TreeItemsSection)
+        then SettingsFile.EraseSection(TreeItemsSection);
+
+      if (vst.RootNodeCount > 0) then
+      begin
+        Node:= nil;
+        Data:=nil;
+
+        Node:= vst.GetFirst;
+        while Assigned(Node) do
+        begin
+          Data:= vst.GetNodeData(Node);
+          if Assigned(Data) then
+            SettingsFile.WriteString(TreeItemsSection,
+                                      Data^.NodeUID,
+                                  Format('|%s|%d|%d|%s|%s|%d|',[
+                                          Data^.ParentUID,
+                                          Data^.IsGroupName,
+                                          Data^.PathIsExists,
+                                          Data^.ItemName,
+                                          Data^.ItemPath,
+                                          Data^.ItemEncod
+                                                    ]));
+          if (Node^.ChildCount > 0) then
+          begin
+            ChNode:= nil;
+            Data:= nil;
+
+            ChNode:= vst.GetFirstChild(Node);
+            while Assigned(ChNode) do
+            begin
+              Data:= vst.GetNodeData(ChNode);
+              if Assigned(Data) then
+                SettingsFile.WriteString(TreeItemsSection,
+                                          Data^.NodeUID,
+                                      Format('|%s|%d|%d|%s|%s|%d|',[
+                                              Data^.ParentUID,
+                                              Data^.IsGroupName,
+                                              Data^.PathIsExists,
+                                              Data^.ItemName,
+                                              Data^.ItemPath,
+                                              Data^.ItemEncod
+                                                        ]));
+              ChNode:= ChNode^.NextSibling;
+            end;
+          end;
+          Node:=Node^.NextSibling;
+        end;
+      end;
+
+
+      Save(Self);
+    end;
+
+//    NodeUID: string;//GUID
+//    ParentUID: string;//GUID родителя (для узлов в корне пустая строка)
+//    IsGroupName: Integer;//заголовок группы (True = 1)
+//    PathIsExists: Integer;//корректность пути к файлу (для несуществующих 0)
+//    ItemName: string;//название исследования/заголовка группы
+//    ItemPath: string;//путь к файлу (для заголовков пусто)
+//    ItemEncod: Integer;//последняя использованная при открытии кодировка файла (для заголовков пусто)
 end;
 
 procedure TfrmRecomList.FormCreate(Sender: TObject);
