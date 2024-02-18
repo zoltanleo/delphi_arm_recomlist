@@ -24,6 +24,7 @@ uses
   , System.ImageList
   , Vcl.ImgList
   , System.UITypes
+  , System.Character
   , vcl.Menus
   ;
 
@@ -647,14 +648,6 @@ begin
 
       Save(Self);
     end;
-
-//    NodeUID: string;//GUID
-//    ParentUID: string;//GUID родителя (для узлов в корне пустая строка)
-//    IsGroupName: Integer;//заголовок группы (True = 1)
-//    PathIsExists: Integer;//корректность пути к файлу (для несуществующих 0)
-//    ItemName: string;//название исследования/заголовка группы
-//    ItemPath: string;//путь к файлу (для заголовков пусто)
-//    ItemEncod: Integer;//последняя использованная при открытии кодировка файла (для заголовков пусто)
 end;
 
 procedure TfrmRecomList.FormCreate(Sender: TObject);
@@ -804,24 +797,178 @@ begin
 end;
 
 procedure TfrmRecomList.FormShow(Sender: TObject);
-begin
-  with Settings do
-  begin
-    SenderObject:= sofrmRecomList;
-    Load(Self);
-    cbbFmtPrint.ItemIndex:= cbbPrintFmt_ItemIndex;
-    FKeybrdLayoutNum:= KeybrdLayoutNum;
-    pnlLeftCmn.Width:= SettingsFile.ReadInteger(Self.Name,'PnlLeftCmn_Width', pnlLeftCmn.Constraints.MinWidth);
-    chbPreview.Checked:= SettingsFile.ReadBool(Self.Name, 'chbPreview_chk',False);
-    chbWordWrap.Checked:= Settings.SettingsFile.ReadBool(Self.Name, 'chbWordWrap_chk',False);
-    cbbScrollbar.ItemIndex:= Settings.SettingsFile.ReadInteger(Self.Name,'cbbScrollbar_ItemIndex', 0);
-  end;
+const
+  ArrLen = 7;
+var
+  SL: TStringList;
+  i, j: Integer;
+  cnt: Integer;//счетчик
+  StPos, EndPos: Integer;
+  Node, ChNode: PVirtualNode;
+  Data: PItemsRec;
+  tmpArr: array [0..ArrLen] of string;
 
-  SetLastUsedKeyLayout(KeybrdLayoutNum);
-  chbPreviewClick(Sender);
-  chbWordWrapClick(Sender);
-  cbbScrollbarChange(Sender);
-  actChkStatusBtnExecute(Sender);
+  function GetRootNodeByStr(aStr: string): PVirtualNode;
+  var
+    aNode: PVirtualNode;
+    aData: PItemsRec;
+  begin
+    Result:= nil;
+
+    if (vst.RootNodeCount = 0) then Exit;
+    aNode:= nil;
+    aData:= nil;
+    aNode:= vst.GetFirst;
+
+    while Assigned(aNode) do
+    begin
+      aData:= vst.GetNodeData(aNode);
+      if Assigned(aData) then
+        if (aData^.NodeUID = aStr) then
+        begin
+          Result:= aNode;
+          Exit;
+        end;
+      aNode:= aNode^.NextSibling;
+    end;
+  end;
+begin
+  i:= -1;
+  j:= -1;
+
+  SL:=TStringList.Create;
+  try
+    vst.BeginUpdate;
+
+    with Settings do
+    begin
+      SenderObject:= sofrmRecomList;
+      Load(Self);
+      cbbFmtPrint.ItemIndex:= cbbPrintFmt_ItemIndex;
+      FKeybrdLayoutNum:= KeybrdLayoutNum;
+      pnlLeftCmn.Width:= SettingsFile.ReadInteger(Self.Name,'PnlLeftCmn_Width', pnlLeftCmn.Constraints.MinWidth);
+      chbPreview.Checked:= SettingsFile.ReadBool(Self.Name, 'chbPreview_chk',False);
+      chbWordWrap.Checked:= Settings.SettingsFile.ReadBool(Self.Name, 'chbWordWrap_chk',False);
+      cbbScrollbar.ItemIndex:= Settings.SettingsFile.ReadInteger(Self.Name,'cbbScrollbar_ItemIndex', 0);
+
+      if SettingsFile.SectionExists(TreeItemsSection)
+        then SettingsFile.ReadSectionValues(TreeItemsSection, SL);
+
+      if (SL.Count > 0) then
+        //1й проход: ищем root-узлы
+        for i:= 0 to Pred(SL.Count) do
+        begin
+          for j := Low(tmpArr) to High(tmpArr) do tmpArr[j]:='';
+
+          cnt:= 0;
+          StPos:= 1;
+          EndPos:= Pos('=|',SL.Strings[i],StPos);
+
+          tmpArr[cnt]:= Copy(SL.Strings[i], StPos, EndPos - StPos);
+          StPos:= Succ(EndPos);
+
+          while (Pos('|',SL.Strings[i],StPos) > 0) do
+          begin
+            Inc(cnt);
+            EndPos:= Pos('|',SL.Strings[i], StPos + Length('|'));
+            tmpArr[cnt]:= Copy(SL.Strings[i], StPos + Length('|'), EndPos- (StPos + Length('|')));
+            StPos:= EndPos;
+          end;
+
+          if (Trim(tmpArr[1]) <> '')
+            then Continue
+            else
+              begin
+                Node:= vst.AddChild(nil);
+                if not Assigned(Node) then Continue;
+
+                Data:= vst.GetNodeData(Node);
+                if Assigned(Data) then
+                begin
+                  if (Trim(tmpArr[0]) <> '')
+                    then Data^.NodeUID:= Trim(tmpArr[0])
+                    else Data^.NodeUID:= GetUID;
+
+                  Data^.ParentUID:= '';
+                  Data^.IsGroupName:= StrToIntDef(Trim(tmpArr[2]),1);//группа по умолчанию
+                  Data^.PathIsExists:= StrToIntDef(Trim(tmpArr[3]),0);//нет путей по умолчанию
+
+                  if (Trim(tmpArr[4]) = '')
+                    then Data^.ItemName:= 'БЕЗ ИМЕНИ'
+                    else Data^.ItemName:= Trim(tmpArr[4]);
+
+                  Data^.ItemPath:= Trim(tmpArr[5]);
+                  Data^.ItemEncod:= StrToIntDef(Trim(tmpArr[6]),0);//по умолчанию
+                end;
+              end;
+        end;
+
+        //2й проход: ищем child-узлы
+        for i:= 0 to Pred(SL.Count) do
+        begin
+          for j := Low(tmpArr) to High(tmpArr) do tmpArr[j]:='';
+
+          cnt:= 0;
+          StPos:= 1;
+          EndPos:= Pos('=|',SL.Strings[i],StPos);
+
+          tmpArr[cnt]:= Copy(SL.Strings[i], StPos, EndPos - StPos);
+          StPos:= Succ(EndPos);
+
+          while (Pos('|',SL.Strings[i],StPos) > 0) do
+          begin
+            Inc(cnt);
+            EndPos:= Pos('|',SL.Strings[i], StPos + Length('|'));
+            tmpArr[cnt]:= Copy(SL.Strings[i], StPos + Length('|'), EndPos- (StPos + Length('|')));
+            StPos:= EndPos;
+          end;
+
+          if (Trim(tmpArr[1]) = '')
+            then Continue
+            else
+              begin
+                Node:= GetRootNodeByStr(Trim(tmpArr[1]));
+                if not Assigned(Node) then Continue;
+
+                ChNode:= vst.AddChild(Node);
+                if not Assigned(ChNode) then Continue;
+
+                Data:= vst.GetNodeData(ChNode);
+                if Assigned(Data) then
+                begin
+                  if (Trim(tmpArr[0]) <> '')
+                    then Data^.NodeUID:= Trim(tmpArr[0])
+                    else Data^.NodeUID:= GetUID;
+
+                  Data^.ParentUID:= Trim(tmpArr[1]);
+                  Data^.IsGroupName:= StrToIntDef(Trim(tmpArr[2]),0);//НЕ группа по умолчанию
+
+                  if (Trim(tmpArr[4]) = '')
+                    then Data^.ItemName:= 'БЕЗ ИМЕНИ'
+                    else Data^.ItemName:= Trim(tmpArr[4]);
+
+                  Data^.ItemPath:= Trim(tmpArr[5]);
+                  Data^.ItemEncod:= StrToIntDef(Trim(tmpArr[6]),0);//по умолчанию
+
+                  if FileExists(Trim(tmpArr[5]))
+                    then Data^.PathIsExists:= 1
+                    else Data^.PathIsExists:= 0;
+
+                end;
+              end;
+        end;
+    end;
+
+    SetLastUsedKeyLayout(KeybrdLayoutNum);
+    chbPreviewClick(Sender);
+    chbWordWrapClick(Sender);
+    cbbScrollbarChange(Sender);
+    actChkStatusBtnExecute(Sender);
+  finally
+    vst.EndUpdate;
+    vst.Refresh;
+    SL.Free;
+  end;
 end;
 
 function TfrmRecomList.GetUID: string;
@@ -879,7 +1026,9 @@ begin
     0:
       case Column of
         0: CellText:= Data^.ItemName;
-        1: CellText:= '';
+        1: if (Data^.IsGroupName = 1)
+             then CellText:= ''
+             else CellText:= Data^.ItemPath;
       end;
     1:
       case Column of
