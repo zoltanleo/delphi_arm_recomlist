@@ -36,7 +36,6 @@ object frmRecomList: TfrmRecomList
     Align = alLeft
     Caption = 'pnlLeftCmn'
     TabOrder = 0
-    ExplicitHeight = 408
     object pnlLeftTop: TPanel
       Left = 1
       Top = 1
@@ -46,7 +45,6 @@ object frmRecomList: TfrmRecomList
       Caption = 'pnlLeftTop'
       ParentColor = True
       TabOrder = 0
-      ExplicitHeight = 364
       DesignSize = (
         519
         365)
@@ -127,7 +125,6 @@ object frmRecomList: TfrmRecomList
       Align = alBottom
       Caption = 'pnlLeftBottom'
       TabOrder = 1
-      ExplicitTop = 365
       DesignSize = (
         519
         42)

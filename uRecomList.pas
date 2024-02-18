@@ -431,17 +431,19 @@ begin
                             and FileExists(Data^.ItemPath));
 
 //      if chbPreview.Checked then
-//        if (FileExists(Data^.ItemPath) and (Data^.IsGroupName = 0))
-//        then
-//          case Data^.ItemEncod of
-//            1: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.ANSI);
-//            2: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.UTF8);
-//            3: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.Unicode);
-//            4: REdt.Lines.LoadFromFile(oDlg.FileName,TEncoding.BigEndianUnicode);
-//            else
-//              REdt.Lines.LoadFromFile(oDlg.FileName);
-//          end
-//        else REdt.Clear;
+//        if (vst.SelectedCount = 1) then
+//          if (FileExists(Data^.ItemPath) and (Data^.IsGroupName = 0))
+//            then
+//              case Data^.ItemEncod of
+//                1: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.ANSI);
+//                2: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.UTF8);
+//                3: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.Unicode);
+//                4: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.BigEndianUnicode);
+//                else
+//                  REdt.Lines.LoadFromFile(Data^.ItemPath);
+//              end
+//          else
+//            REdt.Clear;
     end;
   end;
 
@@ -992,8 +994,30 @@ begin
 end;
 
 procedure TfrmRecomList.vstAddToSelection(Sender: TBaseVirtualTree; Node: PVirtualNode);
+var
+  Data: PItemsRec;
 begin
+  Data:= nil;
+
   ActChkStatusBtnExecute(Sender);
+
+  Data:= vst.GetNodeData(Node);
+  if not Assigned(Data) then Exit;
+
+  if chbPreview.Checked then
+    if (vst.SelectedCount = 1) then
+      if (FileExists(Data^.ItemPath) and (Data^.IsGroupName = 0))
+        then
+          case Data^.ItemEncod of
+            1: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.ANSI);
+            2: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.UTF8);
+            3: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.Unicode);
+            4: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.BigEndianUnicode);
+            else
+              REdt.Lines.LoadFromFile(Data^.ItemPath);
+          end
+      else
+        REdt.Clear;
 end;
 
 procedure TfrmRecomList.vstFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
