@@ -36,6 +36,7 @@ object frmRecomList: TfrmRecomList
     Align = alLeft
     Caption = 'pnlLeftCmn'
     TabOrder = 0
+    ExplicitHeight = 408
     object pnlLeftTop: TPanel
       Left = 1
       Top = 1
@@ -45,6 +46,7 @@ object frmRecomList: TfrmRecomList
       Caption = 'pnlLeftTop'
       ParentColor = True
       TabOrder = 0
+      ExplicitHeight = 364
       DesignSize = (
         519
         365)
@@ -125,6 +127,7 @@ object frmRecomList: TfrmRecomList
       Align = alBottom
       Caption = 'pnlLeftBottom'
       TabOrder = 1
+      ExplicitTop = 365
       DesignSize = (
         519
         42)
@@ -209,6 +212,8 @@ object frmRecomList: TfrmRecomList
       ReadOnly = True
       ScrollBars = ssBoth
       TabOrder = 0
+      ExplicitWidth = 431
+      ExplicitHeight = 352
     end
     object chbWordWrap: TCheckBox
       Left = 3
@@ -230,6 +235,8 @@ object frmRecomList: TfrmRecomList
       Anchors = [akRight, akBottom]
       TabOrder = 2
       OnChange = cbbScrollbarChange
+      ExplicitLeft = 273
+      ExplicitTop = 376
     end
   end
   object actList: TActionList
@@ -424,9 +431,5 @@ object frmRecomList: TfrmRecomList
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000}
-  end
-  object oDlg: TOpenDialog
-    Left = 193
-    Top = 17
   end
 end

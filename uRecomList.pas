@@ -76,7 +76,6 @@ type
     actCallNodeInfo: TAction;
     actChkStatusBtn: TAction;
     btnClose: TButton;
-    oDlg: TOpenDialog;
     procedure FormCreate(Sender: TObject);
     procedure vstGetNodeDataSize(Sender: TBaseVirtualTree; var NodeDataSize: Integer);
     procedure vstFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -209,7 +208,6 @@ begin
           end;
         emEdit:
           begin
-//            ! не редактируется любой узел с AV
             Node:= vst.GetFirstSelected;
             if not Assigned(Node) then Exit;
 
@@ -501,23 +499,26 @@ end;
 
 procedure TfrmRecomList.actNodeEdtExecute(Sender: TObject);
 var
-  NodeLvl: Integer;
   Node: PVirtualNode;
+  Data: PItemsRec;
 begin
   if (vst.RootNodeCount = 0) then Exit;
 
-  if (vst.SelectedCount = 0) then
+  if (vst.SelectedCount <> 1) then
   begin
-//    Node:= vst.GetFirst;
-//    vst.Selected[Node]:= True;
     Application.MessageBox('Вы должны выделить редактируемый узел!',
                           'Недостаточно данных', MB_ICONINFORMATION);
     Exit;
   end;
 
-  case vst.GetNodeLevel(Node) of
-    0: FNodeInfoMode:= nimGroup;
-    1: FNodeInfoMode:= nimItem;
+  Node:= vst.GetFirstSelected;
+  Data:= vst.GetNodeData(Node);
+
+  if not Assigned(Data) then Exit;
+
+  case Data^.IsGroupName of
+    0: FNodeInfoMode:= nimItem;
+    1: FNodeInfoMode:= nimGroup;
   end;
 
   FEditMode:= emEdit;
@@ -656,8 +657,6 @@ procedure TfrmRecomList.FormCreate(Sender: TObject);
 var
   i: Integer;
 begin
-  oDlg.Filter:= 'файлы с текстом(*.txt;*.rtf)|*.txt;*.rtf';
-
   for i := 0 to Pred(Self.ControlCount) do
     if TControl(Self.Controls[i]).InheritsFrom(TPanel) then
     begin
