@@ -49,6 +49,9 @@ type
     actSave: TAction;
     actCancel: TAction;
     actHelp: TAction;
+    chbWordWrap: TCheckBox;
+    Label3: TLabel;
+    cbbScrollbar: TComboBox;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -56,6 +59,8 @@ type
     procedure actSaveExecute(Sender: TObject);
     procedure actCancelExecute(Sender: TObject);
     procedure actHelpExecute(Sender: TObject);
+    procedure cbbScrollbarChange(Sender: TObject);
+    procedure chbWordWrapClick(Sender: TObject);
   private
     FNodeInfoMode: TNodeInfoMode;
     FKeybrdLayoutNum: Integer;
@@ -129,6 +134,24 @@ begin
   Self.ModalResult:= mrOk;
 end;
 
+procedure TfrmNodeInfo.cbbScrollbarChange(Sender: TObject);
+var
+  sbValue: TScrollStyle;
+begin
+  case cbbScrollbar.ItemIndex of
+    0: sbValue:= TScrollStyle.ssBoth; //обе
+    1: sbValue:= TScrollStyle.ssVertical; // вертикальная
+    2: sbValue:= TScrollStyle.ssHorizontal; // горизонтальная
+    3: sbValue:= TScrollStyle.ssNone; // отсутствуют
+  end;
+  REdt.ScrollBars:= sbValue;
+end;
+
+procedure TfrmNodeInfo.chbWordWrapClick(Sender: TObject);
+begin
+  REdt.WordWrap:= chbWordWrap.Checked;
+end;
+
 procedure TfrmNodeInfo.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   case NodeInfoMode of
@@ -140,6 +163,12 @@ begin
   Settings.KeybrdLayoutNum:= Self.KeybrdLayoutNum;
   if (EditMode = emAdd) then
     Settings.SettingsFile.WriteInteger(Self.Name,'cbbFileEncode_ItemIndex', cbbFileEncode.ItemIndex);
+
+  if (NodeInfoMode=nimItem) then
+  begin
+    Settings.SettingsFile.WriteBool(Self.Name, 'chbWordWrap_chk',chbWordWrap.Checked);
+    Settings.SettingsFile.WriteInteger(Self.Name,'cbbScrollbar_ItemIndex', cbbScrollbar.ItemIndex);
+  end;
   Settings.Save(Self);
 end;
 
@@ -174,6 +203,18 @@ begin
       TPanel(pnlNodeInfo.Controls[i]).BevelOuter:= bvNone;
       TPanel(pnlNodeInfo.Controls[i]).ShowCaption:= False;
     end;
+
+  pnlRichEdit.Constraints.MinWidth:= 490;
+
+  with cbbScrollbar do
+  begin
+    Clear;
+    Items.Add('обе');
+    Items.Add('вертикальная');
+    Items.Add('горизонтальная');
+    Items.Add('отсутствуют');
+    ItemIndex:= 0;
+  end;
 
   with cbbFileEncode do
   begin
@@ -223,6 +264,12 @@ begin
   if (EditMode = emAdd) then
     cbbFileEncode.ItemIndex:= Settings.SettingsFile.ReadInteger(Self.Name,'cbbFileEncode_ItemIndex', 0);
 
+  if (NodeInfoMode = nimItem) then
+  begin
+    cbbScrollbar.ItemIndex:= Settings.SettingsFile.ReadInteger(Self.Name,'cbbScrollbar_ItemIndex', 0);
+    chbWordWrap.Checked:= Settings.SettingsFile.ReadBool(Self.Name, 'chbWordWrap_chk',False);
+  end;
+
   oDlg.InitialDir:= InitDir;
 
   case NodeInfoMode of
@@ -233,6 +280,7 @@ begin
         if pnlGroup.Visible then Self.ClientHeight:= Self.ClientHeight + pnlGroup.Height;
         Self.BorderStyle:= bsSingle;
         Self.BorderIcons:= Self.BorderIcons - [biMaximize];
+        if edtItemName.CanFocus then edtItemName.SetFocus;
       end;
     nimItem:
       begin
@@ -241,11 +289,18 @@ begin
         Self.BorderIcons:= Self.BorderIcons + [biMaximize];
         Self.ClientHeight:= pnlCommon.Height + pnlButtons.Height;
         if pnlGroup.Visible then Self.ClientHeight:= Self.ClientHeight + pnlGroup.Height;
+        if pnlGroup.Visible
+        then
+          begin
+            if cbbGroup.CanFocus then cbbGroup.SetFocus;
+          end
+        else
+          if edtItemName.CanFocus then edtItemName.SetFocus;
 
+        chbWordWrapClick(Sender);
+        cbbScrollbarChange(Sender);
       end;
   end;
-
-  if edtItemName.CanFocus then edtItemName.SetFocus;
 end;
 
 end.

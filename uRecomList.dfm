@@ -69,6 +69,7 @@ object frmRecomList: TfrmRecomList
         OnResize = vstResize
         Touch.InteractiveGestures = [igPan, igPressAndTap]
         Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia, igoPanGutter, igoParentPassthrough]
+        ExplicitHeight = 352
         Columns = <>
       end
       object btnGroupAdd: TButton

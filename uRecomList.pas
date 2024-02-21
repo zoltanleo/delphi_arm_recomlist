@@ -380,21 +380,11 @@ begin
       end;
     end;
   finally
-    vst.Refresh;
-//        vst.TreeOptions.SelectionOptions:= vst.TreeOptions.SelectionOptions - [toMultiselect];
-//        vst.Selected[Node]:= True;
-//        vst.TreeOptions.SelectionOptions:= vst.TreeOptions.SelectionOptions + [toMultiselect];
-//        if vst.CanFocus then vst.SetFocus;
     actChkStatusBtnExecute(Sender);
     FreeAndNil(tmpFrm);
+    vst.Refresh;
+    if vst.CanFocus then vst.SetFocus;
   end;
-//    NodeUID: string;//GUID
-//    ParentUID: string;//GUID родителя (для узлов в корне пустая строка)
-//    IsGroupName: Integer;//заголовок группы (True = 1)
-//    PathIsExists: Integer;//корректность пути к файлу (для несущестующих 0)
-//    ItemName: string;//название исследования/заголовка группы
-//    ItemPath: string;//путь к файлу (для заголовков пусто)
-//    ItemEncod: Integer;//последняя использованная при открытии кодировка файла
 end;
 
 procedure TfrmRecomList.actChkStatusBtnExecute(Sender: TObject);
@@ -417,36 +407,46 @@ begin
   ActPrint.Enabled:= False;
 
   if (vst.RootNodeCount > 0) then
-  begin
-    if (vst.SelectedCount = 0) then Node:= vst.GetFirst;
-    if (vst.SelectedCount > 1) then Node:= vst.GetFirstSelected;
-
-    Data:= vst.GetNodeData(Node);
-    if Assigned(Data) then
+    if (vst.SelectedCount = 1) then
     begin
-      ActPrint.Enabled:= ((vst.SelectedCount = 1)
-                          and (Data^.IsGroupName = 0)
-                            and FileExists(Data^.ItemPath));
+      Node:= vst.GetFirstSelected;
 
-//      if chbPreview.Checked then
-//        if (vst.SelectedCount = 1) then
-//          if (FileExists(Data^.ItemPath) and (Data^.IsGroupName = 0))
-//            then
-//              case Data^.ItemEncod of
-//                1: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.ANSI);
-//                2: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.UTF8);
-//                3: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.Unicode);
-//                4: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.BigEndianUnicode);
-//                else
-//                  REdt.Lines.LoadFromFile(Data^.ItemPath);
-//              end
-//          else
-//            REdt.Clear;
+      Data:= vst.GetNodeData(Node);
+      if Assigned(Data) then
+        ActPrint.Enabled:= ((Data^.IsGroupName = 0) and FileExists(Data^.ItemPath));
     end;
-  end;
 
   btnPrint.Enabled:= ActPrint.Enabled;
   cbbFmtPrint.Enabled:= ActPrint.Enabled;
+
+
+  if (vst.RootNodeCount > 0) then
+    if (vst.SelectedCount = 1)
+    then
+      begin
+        Node:= vst.GetFirstSelected;
+        if not Assigned(Node) then Exit;
+
+        Data:= vst.GetNodeData(Node);
+        if not Assigned(Data) then Exit;
+
+        if chbPreview.Checked then
+          if (vst.SelectedCount = 1) then
+            if (FileExists(Data^.ItemPath) and (Data^.IsGroupName = 0))
+              then
+                case Data^.ItemEncod of
+                  1: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.ANSI);
+                  2: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.UTF8);
+                  3: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.Unicode);
+                  4: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.BigEndianUnicode);
+                  else
+                    REdt.Lines.LoadFromFile(Data^.ItemPath);
+                end
+            else
+              REdt.Clear;
+      end
+    else
+      REdt.Clear;
 end;
 
 procedure TfrmRecomList.actCloseExecute(Sender: TObject);
@@ -965,6 +965,7 @@ begin
     chbWordWrapClick(Sender);
     cbbScrollbarChange(Sender);
     actChkStatusBtnExecute(Sender);
+    if vst.CanFocus then vst.SetFocus;
   finally
     vst.EndUpdate;
     vst.Refresh;
@@ -1000,23 +1001,23 @@ begin
 
   ActChkStatusBtnExecute(Sender);
 
-  Data:= vst.GetNodeData(Node);
-  if not Assigned(Data) then Exit;
-
-  if chbPreview.Checked then
-    if (vst.SelectedCount = 1) then
-      if (FileExists(Data^.ItemPath) and (Data^.IsGroupName = 0))
-        then
-          case Data^.ItemEncod of
-            1: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.ANSI);
-            2: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.UTF8);
-            3: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.Unicode);
-            4: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.BigEndianUnicode);
-            else
-              REdt.Lines.LoadFromFile(Data^.ItemPath);
-          end
-      else
-        REdt.Clear;
+//  Data:= vst.GetNodeData(Node);
+//  if not Assigned(Data) then Exit;
+//
+//  if chbPreview.Checked then
+//    if (vst.SelectedCount = 1) then
+//      if (FileExists(Data^.ItemPath) and (Data^.IsGroupName = 0))
+//        then
+//          case Data^.ItemEncod of
+//            1: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.ANSI);
+//            2: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.UTF8);
+//            3: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.Unicode);
+//            4: REdt.Lines.LoadFromFile(Data^.ItemPath,TEncoding.BigEndianUnicode);
+//            else
+//              REdt.Lines.LoadFromFile(Data^.ItemPath);
+//          end
+//      else
+//        REdt.Clear;
 end;
 
 procedure TfrmRecomList.vstFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
