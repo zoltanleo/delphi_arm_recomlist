@@ -1,5 +1,11 @@
 # delphi_arm_recomlist
 
+
+0.0.11
+- реализован d'n'd в дереве
+
+![](pict/rec_list_08.gif)
+
 0.0.10
 - frmNodeInfo добавлены опции отображения текста в ричэдите
 

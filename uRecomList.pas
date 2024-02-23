@@ -5,6 +5,7 @@ interface
 uses
   Winapi.Windows
   , Winapi.Messages
+  , Winapi.ActiveX
   , System.SysUtils
   , System.Variants
   , System.Classes
@@ -104,6 +105,10 @@ type
     procedure actChkStatusBtnExecute(Sender: TObject);
     procedure vstAddToSelection(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure vstRemoveFromSelection(Sender: TBaseVirtualTree; Node: PVirtualNode);
+    procedure vstDragDrop(Sender: TBaseVirtualTree; Source: TObject; DataObject: IDataObject; Formats: TFormatArray;
+      Shift: TShiftState; Pt: TPoint; var Effect: Integer; Mode: TDropMode);
+    procedure vstDragOver(Sender: TBaseVirtualTree; Source: TObject; Shift: TShiftState; State: TDragState; Pt: TPoint;
+      Mode: TDropMode; var Effect: Integer; var Accept: Boolean);
   private
     FKeybrdLayoutNum: Integer;
     FNodeInfoMode: TNodeInfoMode;
@@ -1018,6 +1023,69 @@ begin
 //          end
 //      else
 //        REdt.Clear;
+end;
+
+procedure TfrmRecomList.vstDragDrop(Sender: TBaseVirtualTree; Source: TObject; DataObject: IDataObject;
+  Formats: TFormatArray; Shift: TShiftState; Pt: TPoint; var Effect: Integer; Mode: TDropMode);
+var
+  tgtNodeLvl, drgNodeLvl: Integer;
+  tgtNode: PVirtualNode;//принимающий узел
+  Nodes: TNodeArray;//перемещаемые узлы
+  attMode: TVTNodeAttachMode;
+  tgtData, drgData: PItemsRec;
+  i: Integer;
+begin
+  tgtData:= nil;
+  drgData:= nil;
+
+  tgtNode := Sender.DropTargetNode;
+  tgtNodeLvl:= Sender.GetNodeLevel(tgtNode);
+
+  Nodes:= TVirtualStringTree(Source).GetSortedSelection(True);
+
+  if (System.Length(Nodes) = 0) then Exit;
+
+  for i := 0 to Pred(System.Length(Nodes)) do
+  begin
+    tgtData:= Sender.GetNodeData(tgtNode);
+    drgData:= TVirtualStringTree(Source).GetNodeData(Nodes[i]);
+
+    case Mode of
+       dmAbove: attMode := amInsertBefore; //выше узла
+      dmOnNode://над узлом
+              case tgtData^.IsGroupName of
+                0: //ItemNode
+                  case drgData^.IsGroupName of
+                    0: attMode := amInsertAfter;//ItemNode
+                    1: attMode := amNoWhere;//GroupNode
+                  end;
+                1://GroupNode
+                  case drgData^.IsGroupName of
+                    0: attMode := amAddChildLast;//ItemNode
+                    1: attMode := amNoWhere;//GroupNode
+                  end;
+              end;
+      dmBelow: attMode := amInsertAfter;//ниже узла
+        else
+          attMode := amNoWhere;
+    end;
+
+    Sender.MoveTo(Nodes[i], tgtNode, attMode, False);
+    drgNodeLvl:= TVirtualStringTree(Source).GetNodeLevel(Nodes[i]);
+
+    case drgNodeLvl of
+      0: drgData^.ParentUID:= '';
+      1: drgData^.ParentUID:= tgtData^.NodeUID;
+    end;
+
+  end;
+end;
+
+procedure TfrmRecomList.vstDragOver(Sender: TBaseVirtualTree; Source: TObject; Shift: TShiftState; State: TDragState;
+  Pt: TPoint; Mode: TDropMode; var Effect: Integer; var Accept: Boolean);
+begin
+  if (Sender <> TBaseVirtualTree(Source)) then Exit;//если бросаем в пределах того же дерева
+  Accept:= True;
 end;
 
 procedure TfrmRecomList.vstFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
